@@ -47,7 +47,7 @@ export const getBranchesOption = asyncHandler(async (req, res) => {
 
 export const addBranches = asyncHandler(async (req, res) => {
     const request = new sql.Request();
-    const { name, companyId, address, contact, contactPerson, imgLink } =
+    const { name, companyId, address, contact, contactPerson, imgLink, tinNumber } =
         req.body;
 
     request.input("name", sql.VarChar, name);
@@ -56,11 +56,12 @@ export const addBranches = asyncHandler(async (req, res) => {
     request.input("contact", sql.VarChar, contact);
     request.input("contactPerson", sql.VarChar, contactPerson);
     request.input("imgLink", sql.VarChar, imgLink);
+    request.input("tinNumber", sql.VarChar, tinNumber);
 
     const query = 
             request.query(`INSERT 
-                            INTO Branch (Name, CompanyId, Address, Contact, ContactPerson, ImgLink) 
-                            VALUES (@name,@companyId,@address,@contact,@contactPerson,@imgLink)`);
+                            INTO Branch (Name, CompanyId, Address, Contact, ContactPerson, ImgLink, TIN) 
+                            VALUES (@name,@companyId,@address,@contact,@contactPerson,@imgLink,@tinNumber)`);
     try {
         const branch = await query;
         res.status(200).json(branch);
@@ -72,7 +73,7 @@ export const addBranches = asyncHandler(async (req, res) => {
 /* Not Tested Yet */
 export const editBranch = asyncHandler(async (req, res) => {
     const request = new sql.Request();
-    const { name, companyId, address, contact, contactPerson, imgLink, id } =
+    const { name, companyId, address, contact, contactPerson, imgLink, id, tinNumber } =
         req.body;
     request.input("name", sql.VarChar, name);
     request.input("companyId", sql.Int, companyId);
@@ -81,6 +82,7 @@ export const editBranch = asyncHandler(async (req, res) => {
     request.input("contactPerson", sql.VarChar, contactPerson);
     request.input("imgLink", sql.VarChar, imgLink);
     request.input("id", sql.Int, id);
+    request.input("tinNumber", sql.VarChar, tinNumber);
 
     const query = 
             request.query(`UPDATE Branch 
@@ -90,7 +92,8 @@ export const editBranch = asyncHandler(async (req, res) => {
                                 Address = @address,
                                 Contact = @contact,
                                 ContactPerson = @contactPerson,
-                                ImgLink = @imgLink 
+                                ImgLink = @imgLink,
+                                TIN = @tinNumber 
                             WHERE BranchId = @id`);
     try {
         const branch = await query;
