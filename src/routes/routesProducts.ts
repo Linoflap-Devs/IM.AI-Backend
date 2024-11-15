@@ -9,7 +9,10 @@ import {
     requestStockTransfer,
     getTransferProducts,
     reprocessRequest,
-    getCategories
+    getCategories,
+    addCategory,
+    editCategory,
+    deleteCategory
 } from "../controller/controllerProducts";
 import protect from "../middleware/authMiddleware";
 
@@ -26,5 +29,10 @@ router.route("/confirmByBranch").put(protect, confirmationByStoreSender);
 router.route("/confirmReceived").put(protect, receivedApproval);
 router.route("/getListOfProductsConfirmation/tId/:tId").get(getTransferProducts)
 router.route("/reprocessRequest").put(protect, reprocessRequest)
-router.route("/getCategories").get(getCategories)
+
+// Categories 
+router.route("/getCategories").get(getCategories);
+router.route("/addCategory").post(protect, addCategory);
+router.route("/editCategory").patch(protect, editCategory);
+router.route("/deleteCategory").delete(protect, deleteCategory)
 export default router;

@@ -324,3 +324,85 @@ export const getCategories = asyncHandler(async (req, res) => {
         res.status(500).send(error);
     }
 })
+
+export const addCategory = asyncHandler(async (req, res) => {
+    const request = new sql.Request();
+    const {
+        name
+    } = req.body;
+
+    if(!name) {
+        res.status(500).json({message: "Category name is null."})
+    }
+    request.input("categoryName", sql.VarChar, name)
+    
+    const query = request.query(`
+        INSERT INTO Category (Name) 
+        OUTPUT INSERTED.*
+        VALUES (@categoryName)
+        `)
+        
+    try {
+        const category = await query;
+        console.log(category)
+        res.status(200).json(category.recordset[0])
+    }
+    catch (error: any){
+        console.log(error)
+        res.status(500).json({message: error.message})
+    }
+})
+
+export const editCategory = asyncHandler(async (req, res) => {
+    const request = new sql.Request();
+    const {
+        id,
+        value
+    } = req.body
+
+    request.input("Id", sql.BigInt, id)
+    request.input("Value", sql.VarChar, value)
+
+    const query = request.query(`
+        UPDATE Category
+        SET Name = @Value
+        OUTPUT INSERTED.*
+        WHERE CategoryId = @Id
+    `)
+
+    try {
+        const edit = await query;
+        console.log(edit)
+        res.status(200).json(edit.recordset[0])
+    }
+    catch (error: any){
+        console.log(error)
+        res.status(500).json({message: error.message})
+    }
+})
+
+export const deleteCategory = asyncHandler(async (req, res) => {
+    const request = new sql.Request();
+    const {
+        id
+    } = req.body
+
+    console.log(req.body)
+
+    request.input("Id", sql.BigInt, id)
+
+    const query = request.query(`
+        DELETE FROM Category
+        OUTPUT DELETED.*
+        WHERE CategoryId = @Id
+    `)
+
+    try {
+        const deleteCategory = await query;
+        res.status(200).json(deleteCategory.recordset[0])
+    }
+    catch (error: any){
+        console.log(error)
+        res.status(500).json({message: error.message})
+    }
+})
