@@ -12,7 +12,8 @@ import {
     getCategories,
     addCategory,
     editCategory,
-    deleteCategory
+    deleteCategory,
+    getCategoriesAll
 } from "../controller/controllerProducts";
 import protect from "../middleware/authMiddleware";
 
@@ -32,6 +33,7 @@ router.route("/reprocessRequest").put(protect, reprocessRequest)
 
 // Categories 
 router.route("/getCategories").get(getCategories);
+router.route("/getCategoriesAll").get(protect, getCategoriesAll);
 router.route("/addCategory").post(protect, addCategory);
 router.route("/editCategory").patch(protect, editCategory);
 router.route("/deleteCategory").delete(protect, deleteCategory)

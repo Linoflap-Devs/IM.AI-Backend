@@ -314,9 +314,27 @@ export const reprocessRequest = asyncHandler(async (req, res) => {
     }
 })
 
-export const getCategories = asyncHandler(async (req, res) => {
+export const getCategoriesAll = asyncHandler(async (req, res) => {
     const request = new sql.Request();
     const query = request.query(`SELECT * FROM Category`);
+    try {
+        const categories = await query;
+        res.status(200).json(categories.recordset);
+    } catch (error) {
+        res.status(500).send(error);
+    }
+})
+
+export const getCategories = asyncHandler(async (req, res) => {
+    const request = new sql.Request();
+
+    console.log(req.query)
+
+    const { companyId } = req.query;
+
+    request.input("companyId", sql.Int, companyId)
+
+    const query = request.query(`SELECT * FROM Category WHERE CompanyId = @companyId OR CompanyId IS NULL`);
     try {
         const categories = await query;
         res.status(200).json(categories.recordset);
@@ -328,18 +346,20 @@ export const getCategories = asyncHandler(async (req, res) => {
 export const addCategory = asyncHandler(async (req, res) => {
     const request = new sql.Request();
     const {
-        name
+        name,
+        companyId
     } = req.body;
 
     if(!name) {
         res.status(500).json({message: "Category name is null."})
     }
     request.input("categoryName", sql.VarChar, name)
+    request.input("companyId", sql.Int, companyId)
     
     const query = request.query(`
-        INSERT INTO Category (Name) 
+        INSERT INTO Category (Name, CompanyId) 
         OUTPUT INSERTED.*
-        VALUES (@categoryName)
+        VALUES (@categoryName, @companyId)
         `)
         
     try {
@@ -405,4 +425,4 @@ export const deleteCategory = asyncHandler(async (req, res) => {
         console.log(error)
         res.status(500).json({message: error.message})
     }
-})
+})  
