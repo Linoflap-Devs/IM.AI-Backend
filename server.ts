@@ -17,6 +17,7 @@ import routesSupplier from "./src/routes/routesSupplier";
 import routesCompany from "./src/routes/routesCompany";
 import routesProduct from "./src/routes/routesProducts";
 import routesStocks from "./src/routes/routesStocks";
+import routesBatch from "./src/routes/routesBatch";
 /* Imports */
 const app = express();
 const env = process.env;
@@ -42,6 +43,7 @@ app.use("/supplier", routesSupplier);
 app.use("/company", routesCompany);
 app.use("/product", routesProduct);
 app.use("/stocks", routesStocks);
+app.use("/batch", routesBatch);
 
 
 console.log(bgGreen(`Listening to Port ${env.PORT}`));
