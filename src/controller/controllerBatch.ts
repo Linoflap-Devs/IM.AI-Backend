@@ -28,6 +28,7 @@ export const addBatch = asyncHandler(async (req, res) => {
         batchNo,
         productId,
         expDate,
+        quantity,
         supplierId,
         companyId, 
         branchId
@@ -38,14 +39,15 @@ export const addBatch = asyncHandler(async (req, res) => {
     request.input("batchNo", sql.VarChar, batchNo);
     request.input("productId", sql.Int, productId);
     request.input("expDate", sql.SmallDateTime, expDate);
+    request.input("quantity", sql.Int, quantity);
     request.input("supplierId", sql.Int, supplierId);
     request.input("companyId", sql.Int, companyId);
     request.input("branchId", sql.Int, branchId);
 
     const query = request.query(`
-        INSERT INTO Batches (BatchNo, ProductId, ExpirationDate, SupplierId, CompanyId, BranchId) 
+        INSERT INTO Batches (BatchNo, ProductId, Quantity, ExpirationDate, SupplierId, CompanyId, BranchId) 
         OUTPUT INSERTED.*
-        VALUES (@batchNo, @productId, @expDate, @supplierId, @companyId, @branchId)`)
+        VALUES (@batchNo, @productId, @quantity, @expDate, @supplierId, @companyId, @branchId)`)
 
     try {
         const batch = await query

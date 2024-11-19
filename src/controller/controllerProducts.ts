@@ -396,7 +396,7 @@ export const editCategory = asyncHandler(async (req, res) => {
         res.status(200).json(edit.recordset[0])
     }
     catch (error: any){
-        console.log(error)
+        //console.log(error)
         res.status(500).json({message: error.message})
     }
 })
