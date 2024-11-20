@@ -14,24 +14,33 @@ export const getStocks = asyncHandler(async (req, res) => {
                 .query(`SELECT Name,ProductId,BranchId,
                                AVG(Criticallevel) as CriticalLevel,
                                AVG(ReorderLevel) as ReorderLevel,
-                               SUM(Quantity) as Total_Quantity 
+                               SUM(Quantity) as Total_Quantity,
+                               Expired,
+                               NearExpiry,
+                               Valid
                         FROM StockInventory 
                         WHERE BranchId = @branchId 
-                        GROUP BY Name,ProductId,BranchId`)
+                        GROUP BY Name,ProductId,BranchId, Expired, NearExpiry, Valid`)
             : isID(cId)
                 ? request.input("companyId", sql.Int, companyId)
                     .query(`SELECT Name,ProductId,CompanyId,
                                    AVG(Criticallevel) as CriticalLevel,
                                    AVG(ReorderLevel) as ReorderLevel,
-                                   SUM(Quantity) as Total_Quantity  
+                                   SUM(Quantity) as Total_Quantity,
+                                   Expired,
+                                    NearExpiry,
+                                    Valid  
                             FROM StockInventory WHERE CompanyId = @companyId 
-                            GROUP BY Name,ProductId,CompanyId`)
+                            GROUP BY Name,ProductId,CompanyId, Expired, NearExpiry, Valid`)
                 : request.query(`SELECT Name,ProductId,
                                         AVG(Criticallevel) as CriticalLevel,
                                         AVG(ReorderLevel) as ReorderLevel,
-                                        SUM(Quantity) as Total_Quantity 
+                                        SUM(Quantity) as Total_Quantity,
+                                        Expired,
+                                        NearExpiry,
+                                        Valid 
                                 FROM StockInventory 
-                                GROUP BY Name,ProductId`);
+                                GROUP BY Name,ProductId, Expired, NearExpiry, Valid`);
     try {
         const stocks = await query;
         res.status(200).json(stocks.recordset);
@@ -58,9 +67,9 @@ export const addStock = asyncHandler(async (req, res) => {
     request.input("batchId", sql.Int, batchId);
 
     const query = request.query(`
-        INSERT INTO Stocks (ProductId, ExpiryDate, Quantity, BranchId, BatchId) 
+        INSERT INTO Stocks (ProductId,  Quantity, BranchId, BatchId) 
         OUTPUT INSERTED.*
-        VALUES (@productId, @expiryDate, @quantity, @branchId, @batchId)`);
+        VALUES (@productId, @quantity, @branchId, @batchId)`);
 
     try {
         const stock = await query;

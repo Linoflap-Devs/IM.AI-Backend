@@ -61,8 +61,8 @@ export const addProducts = asyncHandler(async (req, res) => {
             request.input("unit", sql.VarChar, unit)
 
             const query = request.query(
-                `INSERT INTO Product (Name, Barcode, CategoryId, ActualWeight,ProductWeight,Unit)
-            VALUES (@name, @barcode, @categoryId, @netWeight, @netWeight,@unit); SELECT SCOPE_IDENTITY() AS ProductId;`);
+                `INSERT INTO Product (Name, Barcode, CategoryId, ActualWeight,ProductWeight,Unit, CriticalLevel, ReorderLevel)
+            VALUES (@name, @barcode, @categoryId, @netWeight, @netWeight,@unit, @critLvlStock, @lowlvlStock); SELECT SCOPE_IDENTITY() AS ProductId;`);
             const result = await query;
             productId = result.recordset[0].ProductId
         } else {
