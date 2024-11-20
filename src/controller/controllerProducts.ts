@@ -28,6 +28,36 @@ export const getProducts = asyncHandler(async (req, res) => {
         res.status(500).send(e);
     }
 });
+
+export const getProduct = asyncHandler(async (req, res) => {
+    const request = new sql.Request();
+    const { cId, bId, pId } = req.params;
+    request.input("productId", sql.Int, pId)
+    const query = isID(bId)
+        ? request.input("branchId", sql.Int, bId).query(`SELECT 
+                            ProductId,Name,BarCode,ActualWeight,CategoryId,BranchId,ProductWeight,Price FROM vw_Products
+                            WHERE BranchId = @branchId AND ProductId = @productId
+                            GROUP BY Name,BarCode,ActualWeight,CategoryId,BranchId,ProductWeight,ProductId,Price`)
+        : isID(cId)
+            ? request.input("companyId", sql.Int, cId).query(`SELECT 
+                        ProductId,Name,BarCode,ActualWeight,CategoryId,CompanyId,ProductWeight,Price
+                        FROM vw_Products
+                        WHERE CompanyId = @companyId AND ProductId = @productId
+                        GROUP BY ProductId,Name,BarCode,ActualWeight,CategoryId,CompanyId,ProductWeight,Price`)
+            : request.query(`SELECT 
+                            Name,BarCode,ActualWeight,CategoryId,ProductWeight,ProductId,Price
+                            FROM vw_Products
+                            WHERE ProductId = @productId
+                            GROUP BY ProductId,Name,BarCode,ActualWeight,CategoryId,ProductWeight,Price`);
+    try {
+        const products = await query;
+        res.status(200).json(products.recordset);
+    } catch (e) {
+        console.log(e)
+        res.status(500).send(e);
+    }
+});
+
 /* Work on progress fix the query */
 
 export const addProducts = asyncHandler(async (req, res) => {

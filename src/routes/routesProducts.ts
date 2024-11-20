@@ -13,13 +13,15 @@ import {
     addCategory,
     editCategory,
     deleteCategory,
-    getCategoriesAll
+    getCategoriesAll,
+    getProduct
 } from "../controller/controllerProducts";
 import protect from "../middleware/authMiddleware";
 
 const router = express.Router();
 
 router.route("/getProducts/cId/:cId/bId/:bId").get(protect, getProducts);
+router.route("/getProducts/cId/:cId/bId/:bId/pId/:pId").get(protect, getProduct);
 router.route("/addProduct").post(protect, addProducts);
 router
     .route("/getTransportOrder/cId/:cId/bId/:bId")
