@@ -36,7 +36,7 @@ export const getBranchesOption = asyncHandler(async (req, res) => {
                         AND IsDeleted = 0`)
         : request.query(`SELECT BranchId as value , Name as label 
                         FROM Branch 
-                        WHERE IsDeleted = 0`); ;
+                        WHERE IsDeleted = 0`);
     try {
         const branches = await query;
         res.status(200).json(branches.recordset);

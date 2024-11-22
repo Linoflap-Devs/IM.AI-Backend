@@ -35,20 +35,24 @@ export const getProduct = asyncHandler(async (req, res) => {
     request.input("productId", sql.Int, pId)
     const query = isID(bId)
         ? request.input("branchId", sql.Int, bId).query(`SELECT 
-                            ProductId,Name,BarCode,ActualWeight,CategoryId,BranchId,ProductWeight,Price FROM vw_Products
+                            ProductId,p.Name,BarCode,ActualWeight,c.Name as Category,BranchId,ProductWeight,Price,p.CriticalLevel, p.ReorderLevel
+                            FROM vw_Products p
+                            JOIN Category c on p.CategoryId = c.CategoryId
                             WHERE BranchId = @branchId AND ProductId = @productId
-                            GROUP BY Name,BarCode,ActualWeight,CategoryId,BranchId,ProductWeight,ProductId,Price`)
+                            GROUP BY p.Name,BarCode,ActualWeight,c.Name,BranchId,ProductWeight,ProductId,Price,p.CriticalLevel, p.ReorderLevel`)
         : isID(cId)
             ? request.input("companyId", sql.Int, cId).query(`SELECT 
-                        ProductId,Name,BarCode,ActualWeight,CategoryId,CompanyId,ProductWeight,Price
-                        FROM vw_Products
-                        WHERE CompanyId = @companyId AND ProductId = @productId
-                        GROUP BY ProductId,Name,BarCode,ActualWeight,CategoryId,CompanyId,ProductWeight,Price`)
+                        ProductId,p.Name,BarCode,ActualWeight,c.Name as Category,p.CompanyId,ProductWeight,Price, p.CriticalLevel, p.ReorderLevel
+                        FROM vw_Products p
+                        JOIN Category c on p.CategoryId = c.CategoryId
+                        WHERE p.CompanyId = @companyId AND ProductId = @productId
+                        GROUP BY ProductId,p.Name,BarCode,ActualWeight,c.Name,p.CompanyId,ProductWeight,Price,p.CriticalLevel, p.ReorderLevel`)
             : request.query(`SELECT 
-                            Name,BarCode,ActualWeight,CategoryId,ProductWeight,ProductId,Price
-                            FROM vw_Products
+                            p.Name,BarCode,ActualWeight,c.Name as Category,ProductWeight,ProductId,Price,p.CriticalLevel, p.ReorderLevel
+                            FROM vw_Products p
+                            JOIN Category c on p.CategoryId = c.CategoryId
                             WHERE ProductId = @productId
-                            GROUP BY ProductId,Name,BarCode,ActualWeight,CategoryId,ProductWeight,Price`);
+                            GROUP BY ProductId,p.Name,BarCode,ActualWeight,c.Name,ProductWeight,Price,p.CriticalLevel, p.ReorderLevel`);
     try {
         const products = await query;
         res.status(200).json(products.recordset);

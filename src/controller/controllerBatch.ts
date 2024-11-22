@@ -22,6 +22,30 @@ export const getBatches = asyncHandler(async (req, res) => {
     } 
 })
 
+export const getBatchesProduct = asyncHandler(async (req, res) => {
+    const request = new sql.Request();
+    const { cId, bId, pId } = req.query;
+
+    const branchOnly = /^[0-9]+$/.test(bId?.toString() || "")
+
+    console.log(req.query)
+    
+    const allBranchQuery = `SELECT Batches.Id, Batches.BatchNo, Batches.Quantity, Batches.ExpirationDate, Batches.CreatedAt, Supplier.SupplierName AS Supplier, Branch.Name AS BranchName FROM Batches JOIN Supplier ON Batches.SupplierId = Supplier.SupplierId JOIN Branch ON Branch.BranchId = Batches.BranchId WHERE Batches.CompanyId = ${cId} AND ProductId = ${pId} ORDER BY Batches.CreatedAt DESC`
+    const branchQuery = `SELECT Batches.Id, Batches.BatchNo, Batches.Quantity, Batches.ExpirationDate, Batches.CreatedAt, Supplier.SupplierName AS Supplier, Branch.Name AS BranchName FROM Batches JOIN Supplier ON Batches.SupplierId = Supplier.SupplierId JOIN Branch ON Branch.BranchId = Batches.BranchId WHERE Batches.CompanyId = ${cId} AND Batches.BranchId = ${bId} AND ProductId = ${pId} ORDER BY Batches.CreatedAt DESC`
+
+    const query = request.query(branchOnly ? branchQuery : allBranchQuery)
+    console.log(query)
+    
+    try {
+        const batches = await query
+        res.status(200).json(batches.recordset);
+    }
+    catch(error: any) {
+        res.status(500).send(error.message);
+    } 
+})
+
+
 export const addBatch = asyncHandler(async (req, res) => {
     const request = new sql.Request();
     const {
