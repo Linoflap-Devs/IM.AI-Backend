@@ -208,6 +208,41 @@ export const getDashboardData = asyncHandler(async (req, res) => {
 })
 
 
+export const getProductSales = asyncHandler(async (req, res) => {
+    const request = new sql.Request()
+    const { cId, bId, from, to, pId } = req.query
+
+    console.log(req.query)
+
+    const branchOnly = /^[0-9]+$/.test(bId?.toString() || "")
+
+    const allBranchQuery = `
+        SELECT BranchName, UpdatedAt, Quantity, Price
+        FROM vw_TransactionReference
+        WHERE CompanyId = ${cId} AND ProductId = ${pId} AND UpdatedAt BETWEEN '${from}' AND '${to}'
+        ORDER BY UpdatedAt DESC
+    `
+
+    const branchQuery = `
+        SELECT BranchName, UpdatedAt, Quantity, Price
+        FROM vw_TransactionReference
+        WHERE CompanyId = ${cId} AND BranchId = ${bId} AND ProductId = ${pId} AND UpdatedAt BETWEEN '${from}' AND '${to}'
+        ORDER BY UpdatedAt DESC
+    `
+
+    const query = sql.query(branchOnly ? branchQuery : allBranchQuery)
+    try {
+        const data = await query
+        res.status(200).json(data.recordset)
+    }
+    catch(error: any) {
+        console.log(error.message);
+        res.status(500).send(error)
+    }
+    
+})
+
+
 
 
 

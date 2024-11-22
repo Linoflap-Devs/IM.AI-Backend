@@ -7,7 +7,8 @@ import {
     getSales,
     getMonthlySales,
     getStoreActivityDashboard,
-    getDashboardData
+    getDashboardData,
+    getProductSales
 } from "../controller/controllerTransaction";
 const router = express.Router();
 
@@ -18,5 +19,6 @@ router.route("/getSales/cId/:cId/bId/:bId/from/:from/to/:to").get(getSales);
 router.route("/getMonthlySales/cId/:cId/bId/:bId").get(getMonthlySales);
 router.route("/getStoreActivityDashboard/cId/:cId/bId/:bId/from/:from/to/:to").get(protect, getStoreActivityDashboard);
 router.route("/getDashboardData/cId/:cId/bId/:bId/from/:from/to/:to").get(protect, getDashboardData);
+router.route("/getProductSales").get(protect, getProductSales)
 
 export default router;
