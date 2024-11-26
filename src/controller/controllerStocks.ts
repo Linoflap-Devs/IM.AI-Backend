@@ -53,6 +53,35 @@ export const getStocks = asyncHandler(async (req, res) => {
     }
 })
 
+export const getStockByProduct = asyncHandler(async (req, res) => {
+    const request = new sql.Request();
+    const { cId, bId, pId } = req.params;
+
+    const branchOnly = /^[0-9]+$/.test(bId?.toString() || "")
+
+    const branchQuery = `
+        SELECT Name, ProductId, CriticalLevel, ReorderLevel, Quantity, Expired, NearExpiry, Valid, BranchName
+        FROM StockInventory
+        JOIN Batches ON StockInventory.
+        WHERE CompanyId = ${cId} AND BranchId = ${bId} AND ProductId = ${pId}
+        GROUP BY Name, ProductId, CriticalLevel, ReorderLevel, Quantity, Expired, NearExpiry, Valid, BranchName
+    `
+    const allBranchQuery = `
+        SELECT Name, ProductId, CriticalLevel, ReorderLevel, Quantity, Expired, NearExpiry, Valid, BranchName
+        FROM StockInventory
+        WHERE CompanyId = ${cId} AND ProductId = ${pId}
+        GROUP BY Name, ProductId, CriticalLevel, ReorderLevel, Quantity, Expired, NearExpiry, Valid, BranchName
+    `
+
+    const query = request.query(branchOnly ? branchQuery : allBranchQuery)
+    try {
+        const stock = await query;
+        res.status(200).json(stock.recordset);
+    } catch (error: any) {
+        res.status(500).send(error.message);
+    }
+})
+
 export const addStock = asyncHandler(async (req, res) => {
     const request = new sql.Request();
     const {
@@ -70,9 +99,9 @@ export const addStock = asyncHandler(async (req, res) => {
     request.input("batchId", sql.Int, batchId);
 
     const query = request.query(`
-        INSERT INTO Stocks (ProductId,  Quantity, BranchId, BatchId) 
+        INSERT INTO Stocks (ProductId,  Quantity, Initial, BranchId, BatchId) 
         OUTPUT INSERTED.*
-        VALUES (@productId, @quantity, @branchId, @batchId)`);
+        VALUES (@productId, @quantity, @quantity, @branchId, @batchId)`);
 
     try {
         const stock = await query;

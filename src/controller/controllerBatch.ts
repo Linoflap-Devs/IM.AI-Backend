@@ -30,8 +30,8 @@ export const getBatchesProduct = asyncHandler(async (req, res) => {
 
     console.log(req.query)
     
-    const allBranchQuery = `SELECT Batches.Id, Batches.BatchNo, Batches.Quantity, Batches.Initial, Batches.ExpirationDate, Batches.CreatedAt, Supplier.SupplierName AS Supplier, Branch.Name AS BranchName FROM Batches JOIN Supplier ON Batches.SupplierId = Supplier.SupplierId JOIN Branch ON Branch.BranchId = Batches.BranchId WHERE Batches.CompanyId = ${cId} AND ProductId = ${pId} ORDER BY Batches.CreatedAt DESC`
-    const branchQuery = `SELECT Batches.Id, Batches.BatchNo, Batches.Quantity, Batches.Initial, Batches.ExpirationDate, Batches.CreatedAt, Supplier.SupplierName AS Supplier, Branch.Name AS BranchName FROM Batches JOIN Supplier ON Batches.SupplierId = Supplier.SupplierId JOIN Branch ON Branch.BranchId = Batches.BranchId WHERE Batches.CompanyId = ${cId} AND Batches.BranchId = ${bId} AND ProductId = ${pId} ORDER BY Batches.CreatedAt DESC`
+    const allBranchQuery = `SELECT Batches.Id, Batches.BatchNo, Stocks.Quantity, Stocks.Initial, Batches.ExpirationDate, Batches.CreatedAt, Supplier.SupplierName AS Supplier, Branch.Name AS BranchName FROM Batches JOIN Supplier ON Batches.SupplierId = Supplier.SupplierId JOIN Stocks ON Stocks.BatchId = Batches.Id JOIN Branch ON Branch.BranchId = Batches.BranchId WHERE Batches.CompanyId = ${cId} AND Batches.ProductId = ${pId} ORDER BY Batches.CreatedAt DESC`
+    const branchQuery = `SELECT Batches.Id, Batches.BatchNo, Stocks.Quantity, Stocks.Initial, Batches.ExpirationDate, Batches.CreatedAt, Supplier.SupplierName AS Supplier, Branch.Name AS BranchName FROM Batches JOIN Supplier ON Batches.SupplierId = Supplier.SupplierId JOIN Stocks ON Stocks.BatchId = Batches.Id JOIN Branch ON Branch.BranchId = Batches.BranchId WHERE Batches.CompanyId = ${cId} AND Batches.BranchId = ${bId} AND Batches.ProductId = ${pId} ORDER BY Batches.CreatedAt DESC`
 
     const query = request.query(branchOnly ? branchQuery : allBranchQuery)
     console.log(query)
@@ -69,9 +69,9 @@ export const addBatch = asyncHandler(async (req, res) => {
     request.input("branchId", sql.Int, branchId);
 
     const query = request.query(`
-        INSERT INTO Batches (BatchNo, ProductId, Quantity, Initial, ExpirationDate, SupplierId, CompanyId, BranchId) 
+        INSERT INTO Batches (BatchNo, ProductId, Quantity, ExpirationDate, SupplierId, CompanyId, BranchId) 
         OUTPUT INSERTED.*
-        VALUES (@batchNo, @productId, @quantity, @quantity, @expDate, @supplierId, @companyId, @branchId)`)
+        VALUES (@batchNo, @productId, @quantity, @expDate, @supplierId, @companyId, @branchId)`)
 
     try {
         const batch = await query
