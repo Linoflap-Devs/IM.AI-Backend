@@ -35,6 +35,27 @@ export const getTransactions = asyncHandler(async (req, res) => {
     }
 });
 
+export const getTransaction = asyncHandler(async (req, res) => {
+    const { tId } = req.params;
+    console.log(tId)
+
+    const request = new sql.Request();
+    const query = request.query(`
+        SELECT CreatedAt, UpdatedAt, TransactionStatus, ReferenceNumber, Name, Quantity, Price, ImgLink, CompanyId, BranchName
+        FROM vw_TransactionReference
+        WHERE TransactionId = ${tId}
+    `)
+
+    try {
+        const transaction = await query;
+        const data = transaction.recordset
+        res.status(200).json(data);
+    } catch (error) {
+        console.log(error);
+        res.status(500).send(error);
+    }
+})
+
 export const editTransferStatus = asyncHandler(async (req, res) => {
     const { id } = req.params;
     console.log(req.params);
@@ -200,6 +221,8 @@ export const getDashboardData = asyncHandler(async (req, res) => {
             leastSelling: queryRes.recordsets[1],
             topSelling: queryRes.recordsets[2],
         }
+        console.log(queryData)
+        console.log(`SELECT SUM(Quantity) as Quantity, SUM(Price) as Price, SUM(PurchasePrice) as PurchasePrice FROM [dbo].[Fn_SalesPerProduct](@dateFrom,@dateTo) ${isID(bId) ? `WHERE BranchId = @branchId` : isID(cId) ? `WHERE CompanyId = @companyId` : ''}`)
         res.status(200).json(queryData)
     } catch (error) {
         console.log(error)
