@@ -240,14 +240,14 @@ export const getProductSales = asyncHandler(async (req, res) => {
     const branchOnly = /^[0-9]+$/.test(bId?.toString() || "")
 
     const allBranchQuery = `
-        SELECT BranchName, UpdatedAt, Quantity, Price
+        SELECT BranchName, UpdatedAt, Quantity, Price, ReferenceNumber, UserClientId
         FROM vw_TransactionReference
         WHERE CompanyId = ${cId} AND ProductId = ${pId} AND UpdatedAt BETWEEN '${from}' AND '${to}'
         ORDER BY UpdatedAt DESC
     `
 
     const branchQuery = `
-        SELECT BranchName, UpdatedAt, Quantity, Price
+        SELECT BranchName, UpdatedAt, Quantity, Price, ReferenceNumber, UserClientId
         FROM vw_TransactionReference
         WHERE CompanyId = ${cId} AND BranchId = ${bId} AND ProductId = ${pId} AND UpdatedAt BETWEEN '${from}' AND '${to}'
         ORDER BY UpdatedAt DESC
