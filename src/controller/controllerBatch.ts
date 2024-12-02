@@ -163,3 +163,26 @@ export const displayBatch = asyncHandler(async (req, res) => {
         res.status(500).send(error.message);
     }
 })
+
+export const storeBatch = asyncHandler(async (req, res) => {
+    const request = new sql.Request(); 
+
+    const { id } = req.body;
+    console.log(req.body, id)
+    
+    request.input("id", sql.Int, id);
+    const query = request.query(`
+        UPDATE Batches 
+        SET LocationStatusId = 1 
+        OUTPUT INSERTED.*
+        WHERE Id = @id
+    `)
+    
+    try {
+        const batch = await query;
+        res.status(200).json(batch.recordset[0]);
+    } catch (error: any) {
+        console.log(error)
+        res.status(500).send(error.message);
+    }
+})

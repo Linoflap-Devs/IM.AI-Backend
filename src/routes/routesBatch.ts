@@ -1,6 +1,6 @@
 import express from "express";
 import protect from "../middleware/authMiddleware";
-import { addBatch, deleteBatch, displayBatch, editBatch, getBatches, getBatchesProduct } from "../controller/controllerBatch";
+import { addBatch, deleteBatch, displayBatch, editBatch, getBatches, getBatchesProduct, storeBatch } from "../controller/controllerBatch";
 
 const router = express.Router();
 
@@ -10,5 +10,6 @@ router.route("/editBatch").patch(protect, editBatch)
 router.route("/deleteBatch").delete(protect, deleteBatch)
 router.route("/getBatchesProduct").get(protect, getBatchesProduct)
 router.route("/displayBatch").patch(protect, displayBatch)
+router.route("/storeBatch").patch(protect, storeBatch)
 
 export default router;
