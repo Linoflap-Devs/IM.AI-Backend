@@ -30,8 +30,8 @@ export const getBatchesProduct = asyncHandler(async (req, res) => {
 
     console.log(req.query)
     
-    const allBranchQuery = `SELECT Batches.Id, Batches.BatchNo, Stocks.Quantity, Stocks.Initial, Batches.ExpirationDate, Batches.CreatedAt, Supplier.SupplierName AS Supplier, Branch.Name AS BranchName FROM Batches JOIN Supplier ON Batches.SupplierId = Supplier.SupplierId JOIN Stocks ON Stocks.BatchId = Batches.Id JOIN Branch ON Branch.BranchId = Batches.BranchId WHERE Batches.CompanyId = ${cId} AND Batches.ProductId = ${pId} ORDER BY Batches.CreatedAt DESC`
-    const branchQuery = `SELECT Batches.Id, Batches.BatchNo, Stocks.Quantity, Stocks.Initial, Batches.ExpirationDate, Batches.CreatedAt, Supplier.SupplierName AS Supplier, Branch.Name AS BranchName FROM Batches JOIN Supplier ON Batches.SupplierId = Supplier.SupplierId JOIN Stocks ON Stocks.BatchId = Batches.Id JOIN Branch ON Branch.BranchId = Batches.BranchId WHERE Batches.CompanyId = ${cId} AND Batches.BranchId = ${bId} AND Batches.ProductId = ${pId} ORDER BY Batches.CreatedAt DESC`
+    const allBranchQuery = `SELECT Batches.Id, Batches.BatchNo, Stocks.Quantity, Stocks.Initial, Batches.ExpirationDate, Batches.CreatedAt, Supplier.SupplierName AS Supplier, Branch.Name AS BranchName, LocationStatus.Name AS LocationStatus FROM Batches JOIN Supplier ON Batches.SupplierId = Supplier.SupplierId JOIN Stocks ON Stocks.BatchId = Batches.Id JOIN Branch ON Branch.BranchId = Batches.BranchId LEFT JOIN LocationStatus ON Batches.LocationStatusId = LocationStatus.LocationStatusId WHERE Batches.CompanyId = ${cId} AND Batches.ProductId = ${pId} ORDER BY Batches.CreatedAt DESC`
+    const branchQuery = `SELECT Batches.Id, Batches.BatchNo, Stocks.Quantity, Stocks.Initial, Batches.ExpirationDate, Batches.CreatedAt, Supplier.SupplierName AS Supplier, Branch.Name AS BranchName, LocationStatus.Name AS LocationStatus FROM Batches JOIN Supplier ON Batches.SupplierId = Supplier.SupplierId JOIN Stocks ON Stocks.BatchId = Batches.Id JOIN Branch ON Branch.BranchId = Batches.BranchId LEFT JOIN LocationStatus ON Batches.LocationStatusId = LocationStatus.LocationStatusId WHERE Batches.CompanyId = ${cId} AND Batches.BranchId = ${bId} AND Batches.ProductId = ${pId} ORDER BY Batches.CreatedAt DESC`
 
     const query = request.query(branchOnly ? branchQuery : allBranchQuery)
     console.log(query)
@@ -140,3 +140,16 @@ export const deleteBatch = asyncHandler(async (req, res) => {
         res.status(500).send(error.message);
     }
 }) 
+
+export const displayBatch = asyncHandler(async (req, res) => {
+    const request = new sql.Request();
+    const { id } = req.params;
+    request.input("id", sql.Int, id);
+    const query = request.query(`UPDATE Batches SET LocationStatusId = 2 WHERE Id = @id`)
+    try {
+        const batch = await query;
+        res.status(200).json(batch.recordset[0]);
+    } catch (error: any) {
+        res.status(500).send(error.message);
+    }
+})

@@ -7,19 +7,19 @@ export const getProducts = asyncHandler(async (req, res) => {
     const { cId, bId } = req.params;
     const query = isID(bId)
         ? request.input("branchId", sql.Int, bId).query(`SELECT 
-                            ProductId,Name,BarCode,ActualWeight,CategoryId,BranchId,ProductWeight,Price FROM vw_Products
+                            ProductId,Name,BarCode,ActualWeight,CategoryId,BranchId,ProductWeight,Price, BranchName, CategoryName FROM vw_Products
                             WHERE BranchId = @branchId
-                            GROUP BY Name,BarCode,ActualWeight,CategoryId,BranchId,ProductWeight,ProductId,Price`)
+                            GROUP BY Name,BarCode,ActualWeight,CategoryId,BranchId,ProductWeight,ProductId,Price, BranchName, CategoryName`)
         : isID(cId)
             ? request.input("companyId", sql.Int, cId).query(`SELECT 
-                        ProductId,Name,BarCode,ActualWeight,CategoryId,CompanyId,ProductWeight,Price
+                        ProductId,Name,BarCode,ActualWeight,CategoryId,CompanyId,ProductWeight,Price, BranchName, CategoryName
                         FROM vw_Products
                         WHERE CompanyId = @companyId
-                        GROUP BY ProductId,Name,BarCode,ActualWeight,CategoryId,CompanyId,ProductWeight,Price`)
+                        GROUP BY ProductId,Name,BarCode,ActualWeight,CategoryId,CompanyId,ProductWeight,Price, BranchName, CategoryName`)
             : request.query(`SELECT 
-                            Name,BarCode,ActualWeight,CategoryId,ProductWeight,ProductId,Price
+                            Name,BarCode,ActualWeight,CategoryId,ProductWeight,ProductId,Price, BranchName, CategoryName
                             FROM vw_Products
-                            GROUP BY ProductId,Name,BarCode,ActualWeight,CategoryId,ProductWeight,Price`);
+                            GROUP BY ProductId,Name,BarCode,ActualWeight,CategoryId,ProductWeight,Price, BranchName, CategoryName`);
     try {
         const products = await query;
         res.status(200).json(products.recordset);
