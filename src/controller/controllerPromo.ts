@@ -15,6 +15,7 @@ export const getPromo = asyncHandler(async (req, res) => {
                         dbo.Promo.Percentage, 
                         dbo.Promo.BranchId, 
                         dbo.Promo.EndDate, 
+                        dbo.Promo.StartDate,
                         dbo.Promo.IsDeleted, 
                         dbo.Promo.CreatedAt, 
                         dbo.Promo.UpdatedAt, 
@@ -34,6 +35,7 @@ export const getPromo = asyncHandler(async (req, res) => {
                             dbo.Promo.Percentage, 
                             dbo.Promo.BranchId, 
                             dbo.Promo.EndDate, 
+                            dbo.Promo.StartDate,
                             dbo.Promo.IsDeleted, 
                             dbo.Promo.CreatedAt, 
                             dbo.Promo.UpdatedAt, 
@@ -51,6 +53,7 @@ export const getPromo = asyncHandler(async (req, res) => {
                             dbo.Promo.Percentage, 
                             dbo.Promo.BranchId, 
                             dbo.Promo.EndDate, 
+                            dbo.Promo.StartDate,
                             dbo.Promo.IsDeleted, 
                             dbo.Promo.CreatedAt, 
                             dbo.Promo.UpdatedAt, 
@@ -90,19 +93,23 @@ export const addPromo = asyncHandler(async (req, res) => {
         category,
         companyId,
         branchId,
-        expiry,
+        startDate,
+        endDate,
         products
     } = req.body;
+
+    console.log(req.body)
 
     request.input("percentage", sql.Int, percentage);
     request.input("category", sql.VarChar, category);
     request.input("companyId", sql.Int, companyId);
     request.input("branchId", sql.Int, branchId);
-    request.input("expiry", sql.Date, expiry);
+    request.input("startDate", sql.DateTime, startDate)
+    request.input("endDate", sql.DateTime, endDate);
     request.input("name", sql.VarChar, name);
 
-    const query = request.query(`INSERT INTO Promo (Name,Percentage, Category, CompanyId, BranchId,Expiry)
-                            VALUES (@name,@percentage, @category, @companyId, @branchId,@expiry) SELECT SCOPE_IDENTITY() AS id`);
+    const query = request.query(`INSERT INTO Promo (Name,Percentage, Category, CompanyId, BranchId, StartDate, EndDate )
+                            VALUES (@name,@percentage, @category, @companyId, @branchId, @startDate, @endDate) SELECT SCOPE_IDENTITY() AS id`);
     try {
         const promo = await query
             .then(async (data: any) => {

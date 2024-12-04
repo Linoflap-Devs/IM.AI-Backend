@@ -293,12 +293,13 @@ export const storeBatch = asyncHandler(async (req, res) => {
 
         const { Id, ProductId, Quantity, LocationStatusId } = batchDetails.recordset[0];
 
-        await transaction.request()
+        const updateBatch = await transaction.request()
             .input("id", sql.Int, id)
             .input("NewLocation", sql.Int, 1)
             .query(`
                 UPDATE Batches
                 SET LocationStatusId = @NewLocation
+                OUTPUT INSERTED.*
                 WHERE Id = @id    
             `)
 
@@ -324,7 +325,7 @@ export const storeBatch = asyncHandler(async (req, res) => {
             `)
 
         await transaction.commit();
-        res.status(200).json({ message: "Batch moved successfully" });
+        res.status(200).json({ message: "Batch moved successfully", batch: updateBatch.recordset[0]});
     }
     catch (error: any) {
         await transaction.rollback()
