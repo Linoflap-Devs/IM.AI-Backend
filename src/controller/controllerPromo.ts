@@ -72,6 +72,7 @@ export const getPromo = asyncHandler(async (req, res) => {
     }
 });
 
+
 export const getPromoProducts = asyncHandler(async (req, res) => {
     const request = new sql.Request();
     const { pId } = req.params;
@@ -123,6 +124,73 @@ export const addPromo = asyncHandler(async (req, res) => {
         console.log(e);
     }
 });
+
+export const editPromo = asyncHandler(async (req, res) => {
+    const transaction = new sql.Transaction()
+    const {
+        id,
+        name,
+        percentage,
+        startDate,
+        endDate,
+        products
+    } = req.body
+
+    console.log(req.body)
+
+    try {
+        await transaction.begin()
+
+        const editPromo = await transaction.request()
+            .input("name", sql.VarChar, name)
+            .input("percentage", sql.Int, percentage)
+            .input("startDate", sql.DateTime, startDate)
+            .input("endDate", sql.DateTime, endDate)
+            .input("id", sql.Int, id)
+            .query(`
+                UPDATE Promo
+                SET
+                    Name = @name,
+                    Percentage = @percentage,
+                    StartDate = @startDate,
+                    EndDate = @endDate
+                OUTPUT INSERTED.*
+                WHERE PromoId = @id    
+            `)
+        
+        if(products.length > 0) {
+            const deleteProducts = await transaction.request()
+                .input("id", sql.Int, id)
+                .query(`
+                    DELETE FROM PromoProducts
+                    WHERE PromoId = @id AND ProductId NOT IN (${products.join(',')})    
+                `)
+        } 
+        else {
+            const deleteProductsAll = await transaction.request()
+                .input("id", sql.Int, id)
+                .query(`
+                    DELETE FROM PromoProducts
+                    WHERE PromoId = @id    
+                `)  
+        }
+
+        const editPromoProducts = await transaction.request()
+                .input("id", sql.Int, id)
+                .query(`
+                    INSERT INTO PromoProducts (PromoId,ProductId) 
+                    VALUES ${products.map((item: number) => `( @id, ${item})`).join(',')}
+                `)
+
+        await transaction.commit()
+        res.status(200).json({ message: "Promo updated successfully.", data: editPromo.recordset[0]})
+    }
+    catch (error: any) {
+        await transaction.rollback()
+        throw new Error(error.message)
+    }
+})
+
 export const deletePromo = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const query = sql.query`UPDATE Promo SET IsDeleted = 1 WHERE PromoId = ${id}`;
