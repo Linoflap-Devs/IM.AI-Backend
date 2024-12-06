@@ -7,19 +7,19 @@ export const getProducts = asyncHandler(async (req, res) => {
     const { cId, bId } = req.params;
     const query = isID(bId)
         ? request.input("branchId", sql.Int, bId).query(`SELECT 
-                            ProductId,Name,BarCode,ActualWeight,CategoryId,BranchId,ProductWeight,Price, BranchName, CategoryName FROM vw_Products
+                            ProductId,Name,BarCode,ActualWeight,CategoryId,BranchId,ProductWeight,Price,PurchasePrice, BranchName, CategoryName FROM vw_Products
                             WHERE BranchId = @branchId
-                            GROUP BY Name,BarCode,ActualWeight,CategoryId,BranchId,ProductWeight,ProductId,Price, BranchName, CategoryName`)
+                            GROUP BY Name,BarCode,ActualWeight,CategoryId,BranchId,ProductWeight,ProductId,Price,PurchasePrice, BranchName, CategoryName`)
         : isID(cId)
             ? request.input("companyId", sql.Int, cId).query(`SELECT 
-                        ProductId,Name,BarCode,ActualWeight,CategoryId,CompanyId,ProductWeight,Price, BranchName, CategoryName
+                        ProductId,Name,BarCode,ActualWeight,CategoryId,CompanyId,ProductWeight,Price,PurchasePrice, BranchName, CategoryName
                         FROM vw_Products
                         WHERE CompanyId = @companyId
-                        GROUP BY ProductId,Name,BarCode,ActualWeight,CategoryId,CompanyId,ProductWeight,Price, BranchName, CategoryName`)
+                        GROUP BY ProductId,Name,BarCode,ActualWeight,CategoryId,CompanyId,ProductWeight,Price,PurchasePrice, BranchName, CategoryName`)
             : request.query(`SELECT 
-                            Name,BarCode,ActualWeight,CategoryId,ProductWeight,ProductId,Price, BranchName, CategoryName
+                            Name,BarCode,ActualWeight,CategoryId,ProductWeight,ProductId,Price, PurchasePrice, BranchName, CategoryName
                             FROM vw_Products
-                            GROUP BY ProductId,Name,BarCode,ActualWeight,CategoryId,ProductWeight,Price, BranchName, CategoryName`);
+                            GROUP BY ProductId,Name,BarCode,ActualWeight,CategoryId,ProductWeight,Price,PurchasePrice, BranchName, CategoryName`);
     try {
         const products = await query;
         res.status(200).json(products.recordset);
@@ -35,24 +35,24 @@ export const getProduct = asyncHandler(async (req, res) => {
     request.input("productId", sql.Int, pId)
     const query = isID(bId)
         ? request.input("branchId", sql.Int, bId).query(`SELECT 
-                            ProductId,p.Name,BarCode,ActualWeight,c.Name as Category,BranchId,ProductWeight,Price,p.CriticalLevel, p.ReorderLevel
+                            ProductId,p.Name,BarCode,ActualWeight,c.Name as Category,BranchId,ProductWeight,Price,PurchasePrice,p.CriticalLevel, p.ReorderLevel
                             FROM vw_Products p
                             JOIN Category c on p.CategoryId = c.CategoryId
                             WHERE BranchId = @branchId AND ProductId = @productId
-                            GROUP BY p.Name,BarCode,ActualWeight,c.Name,BranchId,ProductWeight,ProductId,Price,p.CriticalLevel, p.ReorderLevel`)
+                            GROUP BY p.Name,BarCode,ActualWeight,c.Name,BranchId,ProductWeight,ProductId,Price,PurchasePrice,p.CriticalLevel, p.ReorderLevel`)
         : isID(cId)
             ? request.input("companyId", sql.Int, cId).query(`SELECT 
-                        ProductId,p.Name,BarCode,ActualWeight,c.Name as Category,p.CompanyId,ProductWeight,Price, p.CriticalLevel, p.ReorderLevel
+                        ProductId,p.Name,BarCode,ActualWeight,c.Name as Category,p.CompanyId,ProductWeight,Price,PurchasePrice, p.CriticalLevel, p.ReorderLevel
                         FROM vw_Products p
                         JOIN Category c on p.CategoryId = c.CategoryId
                         WHERE p.CompanyId = @companyId AND ProductId = @productId
-                        GROUP BY ProductId,p.Name,BarCode,ActualWeight,c.Name,p.CompanyId,ProductWeight,Price,p.CriticalLevel, p.ReorderLevel`)
+                        GROUP BY ProductId,p.Name,BarCode,ActualWeight,c.Name,p.CompanyId,ProductWeight,Price,PurchasePrice,p.CriticalLevel, p.ReorderLevel`)
             : request.query(`SELECT 
-                            p.Name,BarCode,ActualWeight,c.Name as Category,ProductWeight,ProductId,Price,p.CriticalLevel, p.ReorderLevel
+                            p.Name,BarCode,ActualWeight,c.Name as Category,ProductWeight,ProductId,Price,PurchasePrice,p.CriticalLevel, p.ReorderLevel
                             FROM vw_Products p
                             JOIN Category c on p.CategoryId = c.CategoryId
                             WHERE ProductId = @productId
-                            GROUP BY ProductId,p.Name,BarCode,ActualWeight,c.Name,ProductWeight,Price,p.CriticalLevel, p.ReorderLevel`);
+                            GROUP BY ProductId,p.Name,BarCode,ActualWeight,c.Name,ProductWeight,Price,PurchasePrice,p.CriticalLevel, p.ReorderLevel`);
     try {
         const products = await query;
         res.status(200).json(products.recordset);
@@ -73,6 +73,7 @@ export const addProducts = asyncHandler(async (req, res) => {
         netWeight,
         category,
         price,
+        purchasePrice,
         critLvlStock,
         lowlvlStock,
         unit
@@ -112,14 +113,16 @@ export const addProducts = asyncHandler(async (req, res) => {
                     .input("productId", sql.Int, productId)
                     .input("branchId", sql.Int, branch.BranchId)
                     .input("price", sql.Float, price)
-                    .query(`INSERT INTO BranchProducts (ProductId, BranchId,Price) VALUES (@productId, @branchId, @price)`)
+                    .input("purchasePrice", sql.Decimal, purchasePrice)
+                    .query(`INSERT INTO BranchProducts (ProductId, BranchId,Price, PurchasePrice) VALUES (@productId, @branchId, @price, @purchasePrice)`)
             })
         } else {
             await request
                 .input("productId", sql.Int, productId)
                 .input("branchId", sql.Int, branchId)
                 .input("price", sql.Float, price)
-                .query(`INSERT INTO BranchProducts (ProductId, BranchId,Price) VALUES (@productId, @branchId,@price)`)
+                .input("purchasePrice", sql.Decimal, purchasePrice)
+                .query(`INSERT INTO BranchProducts (ProductId, BranchId,Price, PurchasePrice) VALUES (@productId, @branchId,@price, @purchasePrice)`)
         }
         res.status(200).json({ success: true });
     } catch (error) {
