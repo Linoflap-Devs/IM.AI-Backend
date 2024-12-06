@@ -56,6 +56,33 @@ export const getTransaction = asyncHandler(async (req, res) => {
     }
 })
 
+export const getTransactionByRef = asyncHandler(async (req, res) => {
+    const { rNo } = req.params;
+    
+    const request = new sql.Request();
+    request.input("rNo", sql.NVarChar, rNo)
+    const query = request.query(`
+        SELECT CreatedAt, UpdatedAt, TransactionStatus, ReferenceNumber, Name, Quantity, Price, ImgLink, CompanyId, BranchName
+        FROM vw_TransactionReference
+        WHERE ReferenceNumber = @rNo
+    `)
+
+    console.log(` SELECT CreatedAt, UpdatedAt, TransactionStatus, ReferenceNumber, Name, Quantity, Price, ImgLink, CompanyId, BranchName
+        FROM vw_TransactionReference
+        WHERE ReferenceNumber = '${rNo}'`)
+
+    try {
+        console.log("hello")
+        const transaction = await query;
+        console.log(transaction)
+        const data = transaction.recordset
+        res.status(200).json(data);
+    } catch (error) {
+        console.log(error);
+        res.status(500).send(error);
+    }
+})
+
 export const editTransferStatus = asyncHandler(async (req, res) => {
     const { id } = req.params;
     console.log(req.params);
@@ -106,20 +133,20 @@ export const getSales = asyncHandler(async (req, res) => {
 
     const query = isID(bId)
         ? request.input("branchId", sql.Int, bId)
-            .query(`SELECT ReferenceNumber,CreatedAt,TransactionStatus,SUM(Price) as Price,SUM(Quantity) AS Quantity,BranchId FROM vw_TestSales 
+            .query(`SELECT ReferenceNumber,CreatedAt,TransactionStatus,SUM(PurchasePrice) as PurchasePrice, SUM(Price) as Price,SUM(Quantity) AS Quantity,BranchId FROM vw_TestSales 
                                      WHERE BranchId = @branchId 
                                      AND TransactionStatus = 'Success' 
                                      AND CreatedAt BETWEEN @dateFrom AND @dateTo
                                      GROUP BY ReferenceNumber,CreatedAt,TransactionStatus,BranchId`)
         : isID(cId)
             ? request.input("companyId", sql.Int, cId)
-                .query(`SELECT ReferenceNumber,CreatedAt,TransactionStatus,SUM(Price) as Price,SUM(Quantity) AS Quantity,CompanyId FROM vw_TestSales 
+                .query(`SELECT ReferenceNumber,CreatedAt,TransactionStatus,SUM(PurchasePrice) as PurchasePrice,SUM(Price) as Price,SUM(Quantity) AS Quantity,CompanyId FROM vw_TestSales 
                                      WHERE CompanyId = @companyId 
                                      AND TransactionStatus = 'Success' 
                                      AND CreatedAt BETWEEN @dateFrom AND @dateTo
                                      GROUP BY ReferenceNumber,CreatedAt,TransactionStatus,CompanyId`)
 
-            : request.query(`SELECT ReferenceNumber,CreatedAt,TransactionStatus,SUM(Price) as Price,SUM(Quantity) AS Quantity FROM vw_TestSales 
+            : request.query(`SELECT ReferenceNumber,CreatedAt,TransactionStatus,SUM(PurchasePrice) as PurchasePrice,SUM(Price) as Price,SUM(Quantity) AS Quantity FROM vw_TestSales 
                                      WHERE TransactionStatus = 'Success' 
                                      AND CreatedAt BETWEEN @dateFrom AND @dateTo
                                      GROUP BY ReferenceNumber,CreatedAt,TransactionStatus`)
