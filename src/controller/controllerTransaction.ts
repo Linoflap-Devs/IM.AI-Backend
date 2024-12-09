@@ -178,6 +178,28 @@ export const getMonthlySales = asyncHandler(async (req, res) => {
     }
 
 })
+
+export const getMonthlyPurchasePrice = asyncHandler(async (req, res) => {
+    const { cId, bId } = req.params
+    const request = new sql.Request();
+    if (cId === "null" && bId === "null") {
+        res.status(404).send("Not found")
+        return
+    } else {
+        const query = isID(bId) ? request.input("branchId", sql.Int, bId).query(`SELECT * FROM [dbo].[Fn_ChartMonthlyPurchasePrice](@branchId)`) : isID(cId) ? request.input("companyId", sql.Int, cId).query(`SELECT * FROM [dbo].[Fn_ChartMonthlyPurchasePrice](@companyId)`)
+            : request.input("companyId", sql.Int, cId).query(`SELECT * FROM [dbo].[Fn_ChartMonthlyPurchasePriceCompany](@companyId)`)
+
+        try {
+            const sales = await query
+            res.status(200).json(sales.recordset)
+        } catch (error) {
+            console.log(error)
+            res.status(500).send(error)
+        }
+    }
+
+})
+
 export const getStoreActivityDashboard = asyncHandler(async (req, res) => {
     const { cId, bId, from, to } = req.params
     const request = new sql.Request();
