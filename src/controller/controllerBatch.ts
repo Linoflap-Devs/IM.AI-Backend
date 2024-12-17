@@ -2,6 +2,9 @@ import asyncHandler from "express-async-handler";
 import sql from "mssql";
 import { isID } from "../util/helper";
 
+
+/* Batches */
+
 export const getBatches = asyncHandler(async (req, res) => {
     const request = new sql.Request();
     const { cId, bId } = req.query;
@@ -44,7 +47,6 @@ export const getBatchesProduct = asyncHandler(async (req, res) => {
         res.status(500).send(error.message);
     } 
 })
-
 
 export const addBatch = asyncHandler(async (req, res) => {
     const request = new sql.Request();
@@ -333,3 +335,50 @@ export const storeBatch = asyncHandler(async (req, res) => {
         console.log(error.message)
     }
 })
+
+/* Batch Remarks */
+
+export const getBatchRemarks = asyncHandler(async (req, res) => {
+    const request = new sql.Request();
+    const { id } = req.query
+
+    request.input("id", sql.Int, id)
+
+    const query = request.query(`
+        SELECT BatchRemarkText, BatchId, UserId, CreatedAt FROM BatchRemarks WHERE BatchId = @id ORDER BY CreatedAt DESC
+    `)
+
+    try {
+        const response = await query
+        res.status(200).json(response.recordset);
+    }
+
+    catch (error: any) {
+        console.log(error)
+        res.status(500).send(error.message);
+    }
+})
+
+export const addBatchRemarks = asyncHandler(async (req, res) => {
+    const request = new sql.Request();
+    const { batchId, remark, userId } = req.body
+
+    request.input("batchId", sql.Int, batchId)
+    request.input("remark", sql.Text, remark)
+    request.input("userId", sql.Int, userId)
+
+    const query = request.query(`
+        INSERT INTO BatchRemarks (BatchId, BatchRemarkText, UserId)
+        OUTPUT INSERTED.*
+        VALUES (@batchId, @remark, @userId)
+    `)
+
+    try {
+        const response = await query
+        res.status(200).json(response.recordset[0]);
+    }
+    catch(error: any){
+        console.log(error)
+        res.status(500).send(error.message);
+    }
+})  

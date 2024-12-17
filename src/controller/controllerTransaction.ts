@@ -256,9 +256,31 @@ export const getDashboardData = asyncHandler(async (req, res) => {
 
 
     const query = request
-        .query(`SELECT SUM(Quantity) as Quantity, SUM(Price) as Price, SUM(PurchasePrice) as PurchasePrice FROM [dbo].[Fn_SalesPerProduct](@dateFrom,@dateTo) ${isID(bId) ? `WHERE BranchId = @branchId` : isID(cId) ? `WHERE CompanyId = @companyId` : ''}
-                SELECT TOP 5 ProductId,Name,BranchId,CompanyId,SUM(ISNULL(Quantity, 0)) as TotalSale,Price FROM [dbo].[Fn_SalesPerProduct](@dateFrom, @dateTo) ${isID(bId) ? `WHERE BranchId = @branchId` : isID(cId) ? `WHERE CompanyId = @companyId` : ''} GROUP BY ProductId, Name, BranchId, CompanyId, Price ORDER BY TotalSale ASC
-                SELECT TOP 5 ProductId, Name, BranchId, CompanyId, SUM(ISNULL(Quantity, 0)) as TotalSale, Price FROM [dbo].[Fn_SalesPerProduct](@dateFrom, @dateTo) ${isID(bId) ? `WHERE BranchId = @branchId` : isID(cId) ? `WHERE CompanyId = @companyId` : ''} GROUP BY ProductId,Name,BranchId,CompanyId,Price ORDER BY TotalSale DESC
+        .query(`SELECT SUM(Quantity) as Quantity, SUM(Price) as Price, SUM(PurchasePrice) as PurchasePrice FROM [dbo].[Fn_SalesPerProduct](@dateFrom,@dateTo) 
+                ${
+                    isID(bId) ? 
+                    `WHERE BranchId = @branchId` : 
+                        isID(cId) ? 
+                        `WHERE CompanyId = @companyId` : 
+                        ''
+                }
+                SELECT TOP 5 ProductId,Name,BranchId,CompanyId,SUM(ISNULL(Quantity, 0)) as TotalSale,Price FROM [dbo].[Fn_SalesPerProduct](@dateFrom, @dateTo) 
+                ${
+                    isID(bId) ? 
+                    `WHERE BranchId = @branchId` : 
+                        isID(cId) ? 
+                        `WHERE CompanyId = @companyId` : 
+                        ''} 
+                GROUP BY ProductId, Name, BranchId, CompanyId, Price ORDER BY TotalSale ASC
+                SELECT TOP 5 ProductId, Name, BranchId, CompanyId, SUM(ISNULL(Quantity, 0)) as TotalSale, SUM(ISNULL(TotalBatchQuantity, 0)) AS RemainingStock, Price FROM [dbo].[Fn_SalesPerProduct](@dateFrom, @dateTo) 
+                ${
+                    isID(bId) ? 
+                    `WHERE BranchId = @branchId` : 
+                        isID(cId) ? 
+                        `WHERE CompanyId = @companyId` : 
+                        ''
+                } 
+                GROUP BY ProductId,Name,BranchId,CompanyId,Price ORDER BY TotalSale DESC
                 `)
     try {
         if (cId === "null" && bId === "null") {
