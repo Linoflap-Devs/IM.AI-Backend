@@ -345,7 +345,7 @@ export const getBatchRemarks = asyncHandler(async (req, res) => {
     request.input("id", sql.Int, id)
 
     const query = request.query(`
-        SELECT BatchRemarkText, BatchId, UserId, CreatedAt FROM BatchRemarks WHERE BatchId = @id ORDER BY CreatedAt DESC
+        SELECT BatchRemarkText, BatchId, FirstName, LastName, CreatedAt FROM vw_BatchRemarks WHERE BatchId = @id ORDER BY CreatedAt DESC
     `)
 
     try {
