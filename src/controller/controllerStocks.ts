@@ -112,3 +112,99 @@ export const addStock = asyncHandler(async (req, res) => {
     }
 })
 
+export const getStockAdjustments = asyncHandler(async (req, res) => {
+    const request = new sql.Request();
+    const { sId } = req.params;
+
+    request.input("stockId", sql.Int, sId);
+    const query = request.query(`
+        SELECT * FROM vw_StockAdjustments WHERE StockId = @stockId
+    `)
+
+    try {
+        const stockAdjustments = await query;
+        res.status(200).json(stockAdjustments.recordset);
+    }
+    catch(error: any) {
+        res.status(500).send(error.message);
+    }
+})
+
+export const addStockAdjustment = asyncHandler(async (req, res) => {
+    const transaction = new sql.Transaction();
+    const {
+        bId,
+        adjustmentType,
+        quantity,
+        notes,
+        uId,
+    } = req.body;
+
+    try {
+        await transaction.begin();
+
+        console.log(req.body)
+        const fetchStockId = transaction.request();
+        fetchStockId.input("batchId", sql.Int, bId);
+        const stockIdQuery = await fetchStockId.query(`
+            SELECT StockId FROM Stocks WHERE BatchId = @batchId
+        `)
+        if(stockIdQuery.recordset.length === 0) {
+            throw new Error("BatchId does not have an associated StockId")
+        }
+
+        const stockId = stockIdQuery.recordset[0].StockId
+        console.log(`stockId: ${stockId}`)
+        
+        const request = transaction.request();
+        request.input("stockId", sql.Int, stockId);
+        request.input("adjustmentType", sql.Int, adjustmentType);
+        request.input("quantity", sql.Int, quantity);
+        request.input("notes", sql.Text, notes);
+        request.input("userId", sql.Int, uId);
+    
+        const insertAdjustment = await request.query(`
+            INSERT INTO StockAdjustments (StockId, StockAdjustmentType, Quantity, Notes, AdjustedBy) 
+            OUTPUT INSERTED.*
+            VALUES (@stockId, @adjustmentType, @quantity, @notes, @userId)
+        `)
+
+        if(insertAdjustment.recordset.length === 0) {
+            throw new Error("Failed to insert adjustment")
+        }
+
+        const updateBatchRequest = transaction.request();
+        updateBatchRequest.input("batchId", sql.Int, bId);
+        updateBatchRequest.input("quantity", sql.Int, quantity);
+
+        const updateQuery = `
+            UPDATE Batches
+            SET Quantity = CASE
+                WHEN Quantity + @quantity >= 0 THEN Quantity + @quantity
+                ELSE Quantity -- Prevent invalid update
+            END
+            WHERE Id = @batchId;
+
+            -- Check if the quantity would fall below zero
+            IF EXISTS (
+                SELECT 1
+                FROM Batches
+                WHERE Id = @batchId AND Quantity + @quantity < 0
+            )
+            BEGIN
+                THROW 50001, 'Batch quantity cannot be negative.', 1;
+            END
+        `;
+
+        await updateBatchRequest.query(updateQuery);
+
+        await transaction.commit();
+        res.status(200).json({success: true, message: "Adjustments added successfully.", data: insertAdjustment.recordset[0]});
+    }
+
+    catch(error: any) {
+        await transaction.rollback();
+        res.status(500).send(error.message);
+    }
+})
+
