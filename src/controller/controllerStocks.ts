@@ -114,14 +114,26 @@ export const addStock = asyncHandler(async (req, res) => {
 
 export const getStockAdjustments = asyncHandler(async (req, res) => {
     const request = new sql.Request();
-    const { sId } = req.params;
+    const fetchStockId = new sql.Request();
 
-    request.input("stockId", sql.Int, sId);
-    const query = request.query(`
-        SELECT * FROM vw_StockAdjustments WHERE StockId = @stockId
-    `)
+    const { bId } = req.params;
 
+    fetchStockId.input("batchId", sql.Int, bId);
     try {
+        const stockIdQuery = await fetchStockId.query(`
+            SELECT StockId FROM Stocks WHERE BatchId = @batchId
+        `)
+        
+        if(stockIdQuery.recordset.length === 0) {
+            throw new Error("BatchId does not have an associated StockId")
+        }
+
+        const stockId = stockIdQuery.recordset[0].StockId
+        request.input("stockId", sql.Int, stockId);
+
+        const query = request.query(`
+            SELECT * FROM vw_StockAdjustments WHERE StockId = @stockId
+        `)
         const stockAdjustments = await query;
         res.status(200).json(stockAdjustments.recordset);
     }
@@ -129,6 +141,19 @@ export const getStockAdjustments = asyncHandler(async (req, res) => {
         res.status(500).send(error.message);
     }
 })
+
+export const getStockAdjustmentTypes = asyncHandler(async (req, res) => {
+    const request = new sql.Request();
+    const query = request.query(`SELECT StockAdjustmentTypeId, StockAdjustmentType FROM StockAdjustmentType`);
+
+    try {
+        const stockAdjustmentTypes = await query;
+        res.status(200).json(stockAdjustmentTypes.recordset);
+    }
+    catch(error: any) {
+        res.status(500).send(error.message);
+    }
+}) 
 
 export const addStockAdjustment = asyncHandler(async (req, res) => {
     const transaction = new sql.Transaction();
@@ -197,6 +222,30 @@ export const addStockAdjustment = asyncHandler(async (req, res) => {
         `;
 
         await updateBatchRequest.query(updateQuery);
+
+        const updateStockRequest = transaction.request();
+        updateStockRequest.input("stockId", sql.Int, stockId);
+        updateStockRequest.input("quantity", sql.Int, quantity);
+        const updateStocksQuery = `
+            UPDATE Stocks
+            SET Quantity = CASE
+                WHEN Quantity + @quantity >= 0 THEN Quantity + @quantity
+                ELSE Quantity -- Prevent invalid update
+            END
+            WHERE StockId = @stockId;
+
+            -- Check if the quantity would fall below zero
+            IF EXISTS (
+                SELECT 1
+                FROM Stocks
+                WHERE StockId = @stockId AND Quantity + @quantity < 0
+            )
+            BEGIN
+                THROW 50002, 'Stock quantity cannot be negative.', 1;
+            END
+        `;
+
+        await updateStockRequest.query(updateStocksQuery);
 
         await transaction.commit();
         res.status(200).json({success: true, message: "Adjustments added successfully.", data: insertAdjustment.recordset[0]});
