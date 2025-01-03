@@ -49,7 +49,7 @@ export const getBatchesProduct = asyncHandler(async (req, res) => {
 })
 
 export const addBatch = asyncHandler(async (req, res) => {
-    const request = new sql.Request();
+    const transaction = new sql.Transaction();
     const {
         batchNo,
         productId,
@@ -57,31 +57,150 @@ export const addBatch = asyncHandler(async (req, res) => {
         quantity,
         supplierId,
         companyId, 
-        branchId
+        branchId,
+        discrepancies,
+        uId
     } = req.body
 
     console.log(req.body)
-
-    request.input("batchNo", sql.VarChar, batchNo);
-    request.input("productId", sql.Int, productId);
-    request.input("expDate", sql.SmallDateTime, expDate);
-    request.input("quantity", sql.Int, quantity);
-    request.input("supplierId", sql.Int, supplierId);
-    request.input("companyId", sql.Int, companyId);
-    request.input("branchId", sql.Int, branchId);
-
-    const query = request.query(`
-        INSERT INTO Batches (BatchNo, ProductId, Quantity, ExpirationDate, SupplierId, CompanyId, BranchId) 
-        OUTPUT INSERTED.*
-        VALUES (@batchNo, @productId, @quantity, @expDate, @supplierId, @companyId, @branchId)`)
+    console.log(discrepancies)
 
     try {
-        const batch = await query
-        res.status(200).json(batch.recordset[0]);
+        await transaction.begin();
+
+        // Batch
+
+        const batchRequest = transaction.request();
+        batchRequest.input("batchNo", sql.VarChar, batchNo);
+        batchRequest.input("productId", sql.Int, productId);
+        batchRequest.input("expDate", sql.SmallDateTime, expDate);
+        batchRequest.input("quantity", sql.Int, quantity);
+        batchRequest.input("supplierId", sql.Int, supplierId);
+        batchRequest.input("companyId", sql.Int, companyId);
+        batchRequest.input("branchId", sql.Int, branchId);
+
+        const batchResult = await batchRequest.query(`
+            INSERT INTO Batches (BatchNo, ProductId, Quantity, ExpirationDate, SupplierId, CompanyId, BranchId) 
+            OUTPUT INSERTED.*
+            VALUES (@batchNo, @productId, @quantity, @expDate, @supplierId, @companyId, @branchId)
+        `)
+
+        if (!batchResult.recordset.length) {
+            throw new Error("Failed to insert batch");
+        }
+
+        const batchId = batchResult.recordset[0].Id;
+        console.log(`Inserted batch with ID: ${batchId}`);
+
+        // Stocks
+
+        const stockRequest = transaction.request();
+        stockRequest.input("productId", sql.Int, productId);
+        stockRequest.input("quantity", sql.Int, quantity);
+        stockRequest.input("branchId", sql.Int, branchId);
+        stockRequest.input("batchId", sql.Int, batchId);
+
+        const stockResult = await stockRequest.query(`
+            INSERT INTO Stocks (ProductId,  Quantity, Initial, BranchId, BatchId) 
+            OUTPUT INSERTED.*
+            VALUES (@productId, @quantity, @quantity, @branchId, @batchId)    
+        `)
+
+        if (!stockResult.recordset.length) {
+            throw new Error("Failed to insert stock");
+        }
+
+        // Discrepancies
+        
+        if (discrepancies) {
+            let discrepancyArray = JSON.parse(discrepancies);
+            console.log(discrepancyArray)
+            for (const { reason: adjustmentTypeId, quantity: adjQuantity } of discrepancyArray) {
+                const adjustmentRequest = transaction.request();
+                console.log(`Processing discrepancy for adjustmentTypeId ${adjustmentTypeId} with quantity ${adjQuantity}`);
+                adjustmentRequest.input("batchId", sql.Int, batchId);
+                adjustmentRequest.input("adjustmentType", sql.Int, adjustmentTypeId);
+                adjustmentRequest.input("quantity", sql.Int, adjQuantity > 0 ? adjQuantity : -adjQuantity);
+                adjustmentRequest.input("notes", sql.Text, "Adjustment from batch discrepancy");
+                adjustmentRequest.input("userId", sql.Int, uId);
+
+                await adjustmentRequest.query(`
+                    DECLARE @stockId INT;
+
+                    SELECT @stockId = StockId FROM Stocks WHERE BatchId = @batchId;
+
+                    IF @stockId IS NULL
+                    BEGIN
+                        THROW 50001, 'BatchId does not have an associated StockId', 1;
+                    END
+
+                    INSERT INTO StockAdjustments (StockId, StockAdjustmentType, Quantity, Notes, AdjustedBy) 
+                    VALUES (@stockId, @adjustmentType, @quantity, @notes, @userId);
+
+                    UPDATE Batches
+                    SET Quantity = CASE
+                        WHEN Quantity + @quantity >= 0 THEN Quantity + @quantity
+                        ELSE Quantity
+                    END
+                    WHERE Id = @batchId;
+
+                    IF EXISTS (
+                        SELECT 1 FROM Batches WHERE Id = @batchId AND Quantity + @quantity < 0
+                    )
+                    BEGIN
+                        THROW 50002, 'Batch quantity cannot be negative.', 1;
+                    END
+
+                    UPDATE Stocks
+                    SET Quantity = CASE
+                        WHEN Quantity + @quantity >= 0 THEN Quantity + @quantity
+                        ELSE Quantity
+                    END
+                    WHERE StockId = @stockId;
+
+                    IF EXISTS (
+                        SELECT 1 FROM Stocks WHERE StockId = @stockId AND Quantity + @quantity < 0
+                    )
+                    BEGIN
+                        THROW 50003, 'Stock quantity cannot be negative.', 1;
+                    END;
+                `);
+
+                console.log(`Processed discrepancy for adjustmentTypeId ${adjustmentTypeId}`);
+            }
+        }
+
+        await transaction.commit();
+        //let message = discrepancies.length > 0 ? "Batch, stocks, and adjustments added successfully." : "Batch and stocks added successfully.";
+        res.status(200).json({ success: true, message: (discrepancies.length > 0) ? "Batch, stocks, and adjustments added successfully." : "Batch and stocks added successfully.", data: { batchId: batchId} });
     }
-    catch(error: any) {
+
+    catch (error: any) {
+        await transaction.rollback();
+        console.log(error);
         res.status(500).send(error.message);
     }
+
+    // request.input("batchNo", sql.VarChar, batchNo);
+    // request.input("productId", sql.Int, productId);
+    // request.input("expDate", sql.SmallDateTime, expDate);
+    // request.input("quantity", sql.Int, quantity);
+    // request.input("supplierId", sql.Int, supplierId);
+    // request.input("companyId", sql.Int, companyId);
+    // request.input("branchId", sql.Int, branchId);
+
+    // const query = request.query(`
+    //     INSERT INTO Batches (BatchNo, ProductId, Quantity, ExpirationDate, SupplierId, CompanyId, BranchId) 
+    //     OUTPUT INSERTED.*
+    //     VALUES (@batchNo, @productId, @quantity, @expDate, @supplierId, @companyId, @branchId)`)
+
+    // try {
+    //     const batch = await query
+    //     res.status(200).json(batch.recordset[0]);
+    // }
+    // catch(error: any) {
+    //     res.status(500).send(error.message);
+    // }
 })
 
 export const editBatch = asyncHandler(async (req, res) => {
