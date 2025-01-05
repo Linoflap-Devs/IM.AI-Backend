@@ -114,13 +114,12 @@ export const addBatch = asyncHandler(async (req, res) => {
         
         if (discrepancies) {
             let discrepancyArray = JSON.parse(discrepancies);
-            console.log(discrepancyArray)
             for (const { reason: adjustmentTypeId, quantity: adjQuantity } of discrepancyArray) {
                 const adjustmentRequest = transaction.request();
                 console.log(`Processing discrepancy for adjustmentTypeId ${adjustmentTypeId} with quantity ${adjQuantity}`);
                 adjustmentRequest.input("batchId", sql.Int, batchId);
                 adjustmentRequest.input("adjustmentType", sql.Int, adjustmentTypeId);
-                adjustmentRequest.input("quantity", sql.Int, adjQuantity > 0 ? adjQuantity : -adjQuantity);
+                adjustmentRequest.input("quantity", sql.Int, adjQuantity);
                 adjustmentRequest.input("notes", sql.Text, "Adjustment from batch discrepancy");
                 adjustmentRequest.input("userId", sql.Int, uId);
 
