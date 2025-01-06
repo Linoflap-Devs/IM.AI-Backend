@@ -170,7 +170,6 @@ export const addBatch = asyncHandler(async (req, res) => {
         }
 
         await transaction.commit();
-        //let message = discrepancies.length > 0 ? "Batch, stocks, and adjustments added successfully." : "Batch and stocks added successfully.";
         res.status(200).json({ success: true, message: (discrepancies.length > 0) ? "Batch, stocks, and adjustments added successfully." : "Batch and stocks added successfully.", data: { batchId: batchId} });
     }
 
