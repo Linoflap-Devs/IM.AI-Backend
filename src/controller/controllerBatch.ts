@@ -14,7 +14,7 @@ export const getBatches = asyncHandler(async (req, res) => {
     request.input("companyId", sql.Int, cId);
     request.input("branchId", sql.Int, bId);
 
-    const query = request.query(`SELECT * FROM Batches WHERE CompanyId = @companyId AND BranchId = @branchId`)
+    const query = request.query(`SELECT * FROM vw_Batches WHERE CompanyId = @companyId AND BranchId = @branchId`)
     
     try {
         const batches = await query
