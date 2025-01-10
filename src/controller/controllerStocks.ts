@@ -175,6 +175,7 @@ export const addStockAdjustment = asyncHandler(async (req, res) => {
             SELECT StockId FROM Stocks WHERE BatchId = @batchId
         `)
         if(stockIdQuery.recordset.length === 0) {
+            console.log("No stockId associated.")
             throw new Error("BatchId does not have an associated StockId")
         }
 
@@ -183,7 +184,7 @@ export const addStockAdjustment = asyncHandler(async (req, res) => {
         
         const request = transaction.request();
         request.input("stockId", sql.Int, stockId);
-        request.input("adjustmentType", sql.Int, adjustmentType);
+        request.input("adjustmentType", sql.Int, parseInt(adjustmentType));
         request.input("quantity", sql.Int, quantity);
         request.input("notes", sql.Text, notes);
         request.input("userId", sql.Int, uId);
@@ -195,64 +196,78 @@ export const addStockAdjustment = asyncHandler(async (req, res) => {
         `)
 
         if(insertAdjustment.recordset.length === 0) {
+            console.log("Inserting into StockAdjustments failed.")
             throw new Error("Failed to insert adjustment")
         }
 
         const updateBatchRequest = transaction.request();
         updateBatchRequest.input("batchId", sql.Int, bId);
         updateBatchRequest.input("quantity", sql.Int, quantity);
-
+        console.log(updateBatchRequest.parameters)
         const updateQuery = `
+           DECLARE @currentQuantity INT;
+
+            -- Retrieve the current quantity for the batch
+            SELECT @currentQuantity = Quantity
+            FROM Batches
+            WHERE Id = @batchId;
+
+            -- Update the batch quantity
             UPDATE Batches
             SET Quantity = CASE
-                WHEN Quantity + @quantity >= 0 THEN Quantity + @quantity
+                WHEN @currentQuantity + @quantity >= 0 THEN @currentQuantity + @quantity
                 ELSE Quantity -- Prevent invalid update
             END
             WHERE Id = @batchId;
 
             -- Check if the quantity would fall below zero
-            IF EXISTS (
-                SELECT 1
-                FROM Batches
-                WHERE Id = @batchId AND Quantity + @quantity < 0
-            )
+            IF @currentQuantity + @quantity < 0
             BEGIN
-                THROW 50001, 'Batch quantity cannot be negative.', 1;
+                RAISERROR ('Batch quantity cannot be negative. Current Quantity: %d, Change: %d', 16, 1, @currentQuantity, @quantity);
             END
         `;
 
-        await updateBatchRequest.query(updateQuery);
+        console.log("step here")
+        const updateBatchResult = await updateBatchRequest.query(updateQuery);
+        console.log(updateBatchResult.output)
 
         const updateStockRequest = transaction.request();
         updateStockRequest.input("stockId", sql.Int, stockId);
         updateStockRequest.input("quantity", sql.Int, quantity);
         const updateStocksQuery = `
+            DECLARE @currentQuantity INT;
+
+            -- Retrieve the current quantity for the stock
+            SELECT @currentQuantity = Quantity
+            FROM Stocks
+            WHERE StockId = @stockId;
+
+            -- Update the stock quantity
             UPDATE Stocks
             SET Quantity = CASE
-                WHEN Quantity + @quantity >= 0 THEN Quantity + @quantity
+                WHEN @currentQuantity + @quantity >= 0 THEN @currentQuantity + @quantity
                 ELSE Quantity -- Prevent invalid update
             END
             WHERE StockId = @stockId;
 
             -- Check if the quantity would fall below zero
-            IF EXISTS (
-                SELECT 1
-                FROM Stocks
-                WHERE StockId = @stockId AND Quantity + @quantity < 0
-            )
+            IF @currentQuantity + @quantity < 0
             BEGIN
-                THROW 50002, 'Stock quantity cannot be negative.', 1;
+                RAISERROR ('Stock quantity cannot be negative. Current Quantity: %d, Change: %d', 16, 1, @currentQuantity, @quantity);
             END
+
         `;
 
-        await updateStockRequest.query(updateStocksQuery);
-
+        const updateStockResult = await updateStockRequest.query(updateStocksQuery);
+        console.log(`UpdateStock param: ` + updateStockRequest.parameters)
+        console.log(`UpdateStockResult:` + updateStockResult.output)
         await transaction.commit();
         res.status(200).json({success: true, message: "Adjustments added successfully.", data: insertAdjustment.recordset[0]});
     }
 
     catch(error: any) {
         await transaction.rollback();
+        console.log(error)
         res.status(500).send(error.message);
     }
 })
