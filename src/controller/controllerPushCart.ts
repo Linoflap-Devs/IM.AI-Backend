@@ -86,10 +86,9 @@ export const getUnusualTransactions = asyncHandler(async (req, res) => {
                     request.input("branchId", sql.Int, bId).query(` 
                         SELECT  
                             UnusualTransactionId,
-                            CompanyName,
-                            BranchName, 
                             CartCode,
                             ClientId,
+                            UserName,
                             Remarks,
                             Status,
                             CreatedAt
@@ -100,10 +99,10 @@ export const getUnusualTransactions = asyncHandler(async (req, res) => {
                     request.input("companyId", sql.Int, cId).query(` 
                         SELECT 
                             UnusualTransactionId,
-                            CompanyName,
                             BranchName, 
                             CartCode,
                             ClientId,
+                            UserName,
                             Remarks,
                             Status,
                             CreatedAt
@@ -117,6 +116,7 @@ export const getUnusualTransactions = asyncHandler(async (req, res) => {
                             BranchName, 
                             CartCode,
                             ClientId,
+                            UserName,
                             Remarks,
                             Status,
                             CreatedAt
@@ -156,8 +156,18 @@ export const addUnusualTransaction = asyncHandler(async (req, res) => {
 })
 
 export const resolveUnusualCart = asyncHandler(async (req, res) => {
-    const { cartId } = req.params;
+    const { utId } = req.params;
     const request = new sql.Request();
-    request.input("cartId", sql.Int, cartId);
+    request.input("unusualTransId", sql.Int, utId);
 
+    const query = request.query(`UPDATE UnusualTransactions SET Status = 2 OUTPUT INSERTED.* WHERE UnusualTransactionId = @unusualTransId`);
+
+    try {
+        const resolve = await query;
+        res.status(200).json({success: true, message: "Resolved Unusual Transaction", data: resolve.recordset});
+    }
+    catch(error: any) {
+        console.log(error);
+        res.status(500).json({success: false, message: "Failed to resolve Unusual Transaction", data: []});
+    }
 })

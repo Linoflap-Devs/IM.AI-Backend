@@ -6,6 +6,7 @@ import {
     addPushCartReport,
     getUnusualTransactions,
     addUnusualTransaction,
+    resolveUnusualCart,
 } from "../controller/controllerPushCart";
 const router = express.Router();
 
@@ -14,4 +15,5 @@ router.route("/getPushCartReport").post(getPushCartReport);
 router.route("/addPushCartReport").post(protect, addPushCartReport);
 router.route("/addUnusualTransaction").post(protect, addUnusualTransaction);
 router.route("/getUnusualTransactions/cId/:cId/bId/:bId").get(protect, getUnusualTransactions);
+router.route("/resolveUnusualTransaction/utId/:utId").patch(protect, resolveUnusualCart);
 export default router;
