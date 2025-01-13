@@ -11,7 +11,8 @@ import {
     getProductSales,
     getTransaction,
     getTransactionByRef,
-    getMonthlyPurchasePrice
+    getMonthlyPurchasePrice,
+    allowTransactionTransfer
 } from "../controller/controllerTransaction";
 const router = express.Router();
 
@@ -26,5 +27,6 @@ router.route("/getMonthlyPurchasePrice/cId/:cId/bId/:bId").get(getMonthlyPurchas
 router.route("/getStoreActivityDashboard/cId/:cId/bId/:bId/from/:from/to/:to").get(protect, getStoreActivityDashboard);
 router.route("/getDashboardData/cId/:cId/bId/:bId/from/:from/to/:to").get(protect, getDashboardData);
 router.route("/getProductSales").get(protect, getProductSales)
+router.route("/allowTransfer/tId/:tId").patch(protect, allowTransactionTransfer);
 
 export default router;

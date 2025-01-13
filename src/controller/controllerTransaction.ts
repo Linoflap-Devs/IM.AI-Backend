@@ -337,6 +337,25 @@ export const getProductSales = asyncHandler(async (req, res) => {
 })
 
 
+export const allowTransactionTransfer = asyncHandler(async (req, res) => {
+    const { tId } = req.params;
+
+    const request = new sql.Request();
+    request.input("transactionId", sql.Int, tId);
+    const query = request.query(`
+        UPDATE [Transaction] SET TransferableTransaction = 1 WHERE TransactionId = @transactionId    
+    `)
+
+    try {
+        const transaction = await query;
+        res.status(200).json({success: true, message: "Transaction updated successfully.", data: transaction.recordset[0]});
+    } catch (error: any) {
+        console.log(error);
+        res.status(500).json({success: false, message: error.message, data: []});
+    }
+})
+
+
 
 
 
