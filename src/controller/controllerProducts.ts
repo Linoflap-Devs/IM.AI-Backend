@@ -7,19 +7,19 @@ export const getProducts = asyncHandler(async (req, res) => {
     const { cId, bId } = req.params;
     const query = isID(bId)
         ? request.input("branchId", sql.Int, bId).query(`SELECT 
-                            ProductId,Name,BarCode,ActualWeight,CategoryId,BranchId,ProductWeight,Price,PurchasePrice, BranchName, CategoryName FROM vw_Products
+                            ProductId,Name,BarCode,ActualWeight, Unit,CategoryId,BranchId,ProductWeight,Price,PurchasePrice, BranchName, CategoryName FROM vw_Products
                             WHERE BranchId = @branchId
-                            GROUP BY Name,BarCode,ActualWeight,CategoryId,BranchId,ProductWeight,ProductId,Price,PurchasePrice, BranchName, CategoryName`)
+                            GROUP BY Name,BarCode,ActualWeight, Unit,CategoryId,BranchId,ProductWeight,ProductId,Price,PurchasePrice, BranchName, CategoryName`)
         : isID(cId)
             ? request.input("companyId", sql.Int, cId).query(`SELECT 
-                        ProductId,Name,BarCode,ActualWeight,CategoryId,CompanyId,ProductWeight,Price,PurchasePrice, BranchName, CategoryName
+                        ProductId,Name,BarCode,ActualWeight, Unit, CategoryId,CompanyId,ProductWeight,Price,PurchasePrice, BranchName, CategoryName
                         FROM vw_Products
                         WHERE CompanyId = @companyId
-                        GROUP BY ProductId,Name,BarCode,ActualWeight,CategoryId,CompanyId,ProductWeight,Price,PurchasePrice, BranchName, CategoryName`)
+                        GROUP BY ProductId,Name,BarCode,ActualWeight, Unit, CategoryId,CompanyId,ProductWeight,Price,PurchasePrice, BranchName, CategoryName`)
             : request.query(`SELECT 
-                            Name,BarCode,ActualWeight,CategoryId,ProductWeight,ProductId,Price, PurchasePrice, BranchName, CategoryName
+                            Name,BarCode,ActualWeight, Unit ,CategoryId,ProductWeight,ProductId,Price, PurchasePrice, BranchName, CategoryName
                             FROM vw_Products
-                            GROUP BY ProductId,Name,BarCode,ActualWeight,CategoryId,ProductWeight,Price,PurchasePrice, BranchName, CategoryName`);
+                            GROUP BY ProductId,Name,BarCode,ActualWeight, Unit, CategoryId,ProductWeight,Price,PurchasePrice, BranchName, CategoryName`);
     try {
         const products = await query;
         res.status(200).json(products.recordset);
