@@ -14,6 +14,7 @@ export const getStocks = asyncHandler(async (req, res) => {
                 .query(`SELECT Name,ProductId,BranchId,
                                AVG(Criticallevel) as CriticalLevel,
                                AVG(ReorderLevel) as ReorderLevel,
+                               CategoryName,
                                SUM(Quantity) as Total_Quantity,
                                Expired,
                                NearExpiry,
@@ -21,29 +22,31 @@ export const getStocks = asyncHandler(async (req, res) => {
                                BranchName
                         FROM StockInventory 
                         WHERE BranchId = @branchId 
-                        GROUP BY Name,ProductId,BranchId, Expired, NearExpiry, Valid, BranchName`)
+                        GROUP BY Name,ProductId,BranchId,CategoryName, Expired, NearExpiry, Valid, BranchName`)
             : isID(cId)
                 ? request.input("companyId", sql.Int, companyId)
                     .query(`SELECT Name,ProductId,CompanyId,
                                    AVG(Criticallevel) as CriticalLevel,
                                    AVG(ReorderLevel) as ReorderLevel,
+                                   CategoryName,
                                    SUM(Quantity) as Total_Quantity,
                                    Expired,
                                     NearExpiry,
                                     Valid,
                                     BranchName  
                             FROM StockInventory WHERE CompanyId = @companyId 
-                            GROUP BY Name,ProductId,CompanyId, Expired, NearExpiry, Valid, BranchName`)
+                            GROUP BY Name,ProductId,CompanyId,CategoryName, Expired, NearExpiry, Valid, BranchName`)
                 : request.query(`SELECT Name,ProductId,
                                         AVG(Criticallevel) as CriticalLevel,
                                         AVG(ReorderLevel) as ReorderLevel,
+                                        CategoryName,
                                         SUM(Quantity) as Total_Quantity,
                                         Expired,
                                         NearExpiry,
                                         Valid,
                                         BranchName 
                                 FROM StockInventory 
-                                GROUP BY Name,ProductId, Expired, NearExpiry, Valid, BranchName`);
+                                GROUP BY Name,ProductId, CategoryName,Expired, NearExpiry, Valid, BranchName`);
     try {
         const stocks = await query;
         res.status(200).json(stocks.recordset);
