@@ -163,8 +163,10 @@ export const addStockAdjustment = asyncHandler(async (req, res) => {
     const {
         bId,
         adjustmentType,
+        initial,
         quantity,
         notes,
+        location,
         uId,
     } = req.body;
 
@@ -188,14 +190,17 @@ export const addStockAdjustment = asyncHandler(async (req, res) => {
         const request = transaction.request();
         request.input("stockId", sql.Int, stockId);
         request.input("adjustmentType", sql.Int, parseInt(adjustmentType));
+        request.input("initial", sql.Int, initial);
         request.input("quantity", sql.Int, quantity);
+        request.input("total", sql.Int, initial + quantity);
         request.input("notes", sql.Text, notes);
         request.input("userId", sql.Int, uId);
+        request.input("location", sql.Text, location);
     
         const insertAdjustment = await request.query(`
-            INSERT INTO StockAdjustments (StockId, StockAdjustmentType, Quantity, Notes, AdjustedBy) 
+            INSERT INTO StockAdjustments (StockId, StockAdjustmentType, Quantity, Notes, AdjustedBy, Initial, Total, Location) 
             OUTPUT INSERTED.*
-            VALUES (@stockId, @adjustmentType, @quantity, @notes, @userId)
+            VALUES (@stockId, @adjustmentType, @quantity, @notes, @userId, @initial, @total, @location)
         `)
 
         if(insertAdjustment.recordset.length === 0) {
