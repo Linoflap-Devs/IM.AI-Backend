@@ -355,7 +355,70 @@ export const allowTransactionTransfer = asyncHandler(async (req, res) => {
     }
 })
 
+export const testTransaction = asyncHandler(async (req, res) => {
+    const { 
+        bId,
+        ucId,
+        transactionStatus,
+        referenceNumber,
+        
+        pId,
+        quantity,
+        price,
+        identifier
+    } = req.body;
 
+    const transaction = new sql.Transaction();
+
+    try {
+        await transaction.begin();
+
+        // add into transactions
+        const transactionRequest = transaction.request();
+
+        transactionRequest.input("branchId", sql.Int, bId);
+        transactionRequest.input("userClientId", sql.Int, ucId);
+        transactionRequest.input("referenceNumber", sql.NVarChar, referenceNumber);
+        transactionRequest.input("transactionStatus", sql.NVarChar, transactionStatus);
+
+        const transactionQuery = await transactionRequest.query(`   
+            INSERT INTO [Transaction] (BranchId, UserClientId, PushCartId, TransactionStatus, ReferenceNumber, TransferableTransaction)
+            OUTPUT INSERTED.*
+            VALUES 
+                    (@branchId, @userClientId, 'TEST-CART-001', @transactionStatus, @referenceNumber, 0)
+        `)  
+
+        const id = transactionQuery.recordset[0].TransactionId
+        
+        // add into transactiondetails
+        const transactionDetailsRequest = transaction.request();
+
+        transactionDetailsRequest.input("transactionId", sql.Int, id);
+        transactionDetailsRequest.input("productId", sql.Int, pId);
+        transactionDetailsRequest.input("quantity", sql.Int, quantity);
+        transactionDetailsRequest.input("price", sql.Float, price);
+        transactionDetailsRequest.input("identifier", sql.NVarChar, identifier);
+        transactionDetailsRequest.input('referenceNumber', sql.NVarChar, referenceNumber);
+
+        const transactionDetailsQuery = await transactionDetailsRequest.query(`
+            INSERT INTO TransactionDetail (ProductId, TransactionId, Quantity, Unit, ReferenceNumber, TransactionWeight, Price, Identifier)
+            VALUES
+                (@productId, @transactionId, @quantity, 'pcs', @referenceNumber, 0, @price, @identifier)
+        `)
+
+        console.log(transactionDetailsQuery)
+        
+        await transaction.commit();
+
+        res.status(200).json({success: true, message: "Transaction added successfully.", data: {transactionId: id}});
+    }
+
+    catch (error: unknown) {
+        await transaction.rollback();
+        console.log(error)
+        res.status(500).send(error);
+    }
+})
 
 
 
