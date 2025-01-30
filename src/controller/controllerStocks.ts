@@ -11,7 +11,7 @@ export const getStocks = asyncHandler(async (req, res) => {
     const query =
         isID(bId)
             ? request.input("branchId", sql.Int, branchId)
-                .query(`SELECT Name,ProductId,BranchId,
+                .query(`SELECT Name,ProductId,BranchId,Price,
                                AVG(Criticallevel) as CriticalLevel,
                                AVG(ReorderLevel) as ReorderLevel,
                                CategoryName,
@@ -22,10 +22,10 @@ export const getStocks = asyncHandler(async (req, res) => {
                                BranchName
                         FROM StockInventory 
                         WHERE BranchId = @branchId 
-                        GROUP BY Name,ProductId,BranchId,CategoryName, Expired, NearExpiry, Valid, BranchName`)
+                        GROUP BY Name,ProductId,BranchId,CategoryName, Price,Expired, NearExpiry, Valid, BranchName`)
             : isID(cId)
                 ? request.input("companyId", sql.Int, companyId)
-                    .query(`SELECT Name,ProductId,CompanyId,
+                    .query(`SELECT Name,ProductId,CompanyId,Price,
                                    AVG(Criticallevel) as CriticalLevel,
                                    AVG(ReorderLevel) as ReorderLevel,
                                    CategoryName,
@@ -35,7 +35,7 @@ export const getStocks = asyncHandler(async (req, res) => {
                                     Valid,
                                     BranchName  
                             FROM StockInventory WHERE CompanyId = @companyId 
-                            GROUP BY Name,ProductId,CompanyId,CategoryName, Expired, NearExpiry, Valid, BranchName`)
+                            GROUP BY Name,ProductId,CompanyId,CategoryName,Price, Expired, NearExpiry, Valid, BranchName`)
                 : request.query(`SELECT Name,ProductId,
                                         AVG(Criticallevel) as CriticalLevel,
                                         AVG(ReorderLevel) as ReorderLevel,
@@ -46,7 +46,7 @@ export const getStocks = asyncHandler(async (req, res) => {
                                         Valid,
                                         BranchName 
                                 FROM StockInventory 
-                                GROUP BY Name,ProductId, CategoryName,Expired, NearExpiry, Valid, BranchName`);
+                                GROUP BY Name,ProductId, CategoryName,Price,Expired, NearExpiry, Valid, BranchName`);
     try {
         const stocks = await query;
         res.status(200).json(stocks.recordset);
