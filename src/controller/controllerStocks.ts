@@ -135,7 +135,7 @@ export const getStockAdjustments = asyncHandler(async (req, res) => {
         request.input("stockId", sql.Int, stockId);
 
         const query = request.query(`
-            SELECT * FROM vw_StockAdjustments WHERE StockId = @stockId
+            SELECT * FROM vw_StockAdjustments WHERE StockId = @stockId ORDER BY CreatedAt DESC
         `)
         const stockAdjustments = await query;
         res.status(200).json(stockAdjustments.recordset);

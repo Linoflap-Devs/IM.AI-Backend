@@ -119,7 +119,9 @@ export const editSupplier = asyncHandler(async (req, res) => {
 });
 export const deleteSupplier = asyncHandler(async (req, res) => {
     const request = new sql.Request();
-    const { id } = req.params;
+    const { sId } = req.params;
+    const id = parseInt(sId);
+    console.log(id)
     request.input("id", sql.Int, id);
 
     const query = request.query(`UPDATE Supplier SET isDeleted = 1 WHERE SupplierId = @id`
