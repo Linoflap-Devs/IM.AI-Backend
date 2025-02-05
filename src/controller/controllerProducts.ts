@@ -365,8 +365,6 @@ export const getCategoriesAll = asyncHandler(async (req, res) => {
 export const getCategories = asyncHandler(async (req, res) => {
     const request = new sql.Request();
 
-    console.log(req.query)
-
     const { companyId } = req.query;
 
     request.input("companyId", sql.Int, companyId)
