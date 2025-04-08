@@ -378,7 +378,7 @@ export const testTransaction = asyncHandler(async (req, res) => {
 
         transactionRequest.input("branchId", sql.Int, bId);
         transactionRequest.input("userClientId", sql.Int, ucId);
-        transactionRequest.input("referenceNumber", sql.NVarChar, referenceNumber);
+        transactionRequest.input("referenceNumber", sql.BigInt, referenceNumber);
         transactionRequest.input("transactionStatus", sql.NVarChar, transactionStatus);
 
         const transactionQuery = await transactionRequest.query(`   
@@ -398,7 +398,7 @@ export const testTransaction = asyncHandler(async (req, res) => {
         transactionDetailsRequest.input("quantity", sql.Int, quantity);
         transactionDetailsRequest.input("price", sql.Float, price);
         transactionDetailsRequest.input("identifier", sql.NVarChar, identifier);
-        transactionDetailsRequest.input('referenceNumber', sql.NVarChar, referenceNumber);
+        transactionDetailsRequest.input('referenceNumber', sql.BigInt, referenceNumber);
 
         const transactionDetailsQuery = await transactionDetailsRequest.query(`
             INSERT INTO TransactionDetail (ProductId, TransactionId, Quantity, Unit, ReferenceNumber, TransactionWeight, Price, Identifier)

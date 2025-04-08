@@ -39,6 +39,7 @@ const protect = asyncHandler(async (req, res, next) => {
             // req. = sql.query`SELECT UserAdminId, Password, Email FROM UserAdmin WHERE Email = ${"super@gmail.com"}`;
             next();
         } catch (error) {
+            console.log(error)
             res.status(400).json(error);
             throw new Error(bgRed("Not Authorized"));
         }
