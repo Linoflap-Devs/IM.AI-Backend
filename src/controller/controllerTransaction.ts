@@ -383,12 +383,13 @@ export const testTransaction = asyncHandler(async (req, res) => {
 
         const transactionQuery = await transactionRequest.query(`   
             INSERT INTO [Transaction] (BranchId, UserClientId, PushCartId, TransactionStatus, ReferenceNumber, TransferableTransaction)
-            OUTPUT INSERTED.*
+            OUTPUT INSERTED.TransactionId
             VALUES 
                     (@branchId, @userClientId, 'TEST-CART-001', @transactionStatus, @referenceNumber, 0)
         `)  
 
         const id = transactionQuery.recordset[0].TransactionId
+        console.log(transactionQuery)
         
         // add into transactiondetails
         const transactionDetailsRequest = transaction.request();
@@ -402,11 +403,19 @@ export const testTransaction = asyncHandler(async (req, res) => {
 
         const transactionDetailsQuery = await transactionDetailsRequest.query(`
             INSERT INTO TransactionDetail (ProductId, TransactionId, Quantity, Unit, ReferenceNumber, TransactionWeight, Price, Identifier)
+            OUTPUT INSERTED.TransactionId
             VALUES
                 (@productId, @transactionId, @quantity, 'pcs', @referenceNumber, 0, @price, @identifier)
         `)
 
         console.log(transactionDetailsQuery)
+
+        setTimeout(async () => {
+            const updateTransactionSuccess = new sql.Request()
+            const updateTransactionSuccessQuery = await updateTransactionSuccess.query(`
+                UPDATE [Transaction] SET TransactionStatus = 'Success' WHERE TransactionId = ${id}    
+            `)
+        }, 5000)
         
         await transaction.commit();
 
